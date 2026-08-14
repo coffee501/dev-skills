@@ -1,0 +1,6 @@
+interface:
+  display_name: "REL 发布执行"
+  short_description: "安全准备和执行后端发布、数据迁移、灰度观察、回滚与结果记录"
+  default_prompt: "Use $dev-rel to prepare and execute a controlled backend release."
+policy:
+  allow_implicit_invocation: false

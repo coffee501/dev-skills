@@ -1,0 +1,6 @@
+interface:
+  display_name: "OPS 生产运维"
+  short_description: "管理生产运行准备、运行手册、事故响应、服务恢复与持续改进闭环"
+  default_prompt: "Use $dev-ops to handle backend operational readiness or an incident."
+policy:
+  allow_implicit_invocation: false

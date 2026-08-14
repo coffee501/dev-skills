@@ -1,0 +1,6 @@
+interface:
+  display_name: "LC 生命周期治理"
+  short_description: "编排后端研发阶段、统一变更追踪、基线状态和跨模块责任交接"
+  default_prompt: "Use $dev-lc to route and govern an end-to-end backend change."
+policy:
+  allow_implicit_invocation: true

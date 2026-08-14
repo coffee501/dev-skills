@@ -1,0 +1,6 @@
+interface:
+  display_name: "CTX 实现理解"
+  short_description: "从代码与工程证据建立可供后续研发复用的现有实现上下文"
+  default_prompt: "使用 $dev-ctx 理解当前项目实现，并输出可追溯的As-Is上下文和下游交接。"
+policy:
+  allow_implicit_invocation: true

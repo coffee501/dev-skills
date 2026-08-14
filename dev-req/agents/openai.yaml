@@ -1,0 +1,13 @@
+interface:
+  display_name: "REQ 需求分析"
+  short_description: "将粗略需求或已有实现整理为可追踪、可确认和可验收的需求"
+  default_prompt: "使用 $dev-req 分析、评审需求，或从项目已有实现中反向整理候选需求。"
+  icon_small: "./assets/icon.svg"
+  icon_large: "./assets/icon.svg"
+policy:
+  products:
+  - chatgpt
+  - codex
+  - api
+  - atlas
+  allow_implicit_invocation: true

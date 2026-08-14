@@ -1,0 +1,6 @@
+interface:
+  display_name: "VAL 验证执行"
+  short_description: "执行后端与系统集成测试并管理证据、缺陷分类及质量门禁结论"
+  default_prompt: "Use $dev-val to execute approved tests and evaluate validation evidence."
+policy:
+  allow_implicit_invocation: false

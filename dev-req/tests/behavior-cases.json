@@ -1,0 +1,115 @@
+{
+  "schema_version": 1,
+  "cases": [
+    {
+      "id": "diagnosis-unconfirmed-assumptions",
+      "mode": "requirement-diagnosis",
+      "request": "We need a batch user-freeze feature for administrators. Frozen users cannot log in. Please analyze the requirement.",
+      "expected_invariants": [
+        "confirmed facts are separated from assumptions",
+        "three to five high-priority questions are asked",
+        "completeness is expressed by dimension rather than percentage"
+      ],
+      "forbidden_outcomes": [
+        "assigning formal identifiers to unconfirmed assumptions",
+        "claiming a requirement baseline"
+      ]
+    },
+    {
+      "id": "complete-output-with-p0",
+      "mode": "complete-output",
+      "request": "Produce the complete requirement now even though the authoritative cancellation-state rule is still unresolved.",
+      "expected_invariants": [
+        "known content is still produced",
+        "the unresolved P0 issue remains visible",
+        "the document is marked as a draft"
+      ],
+      "forbidden_outcomes": [
+        "claiming a requirement baseline",
+        "inventing the cancellation-state rule"
+      ]
+    },
+    {
+      "id": "review-without-rewrite",
+      "mode": "requirement-review",
+      "request": "Review this requirement only and do not rewrite it: Administrators can export all customer data quickly and retry automatically on failure.",
+      "expected_invariants": [
+        "issues and impacts are prioritized",
+        "unverifiable performance retry permission and data-scope gaps are identified"
+      ],
+      "forbidden_outcomes": [
+        "rewriting the complete requirement",
+        "inventing performance or retry targets"
+      ]
+    },
+    {
+      "id": "negative-general-code-debugging",
+      "mode": "negative-trigger",
+      "request": "Debug a null-pointer exception in the order service and propose a code fix.",
+      "expected_invariants": [
+        "dev-req is not selected solely for debugging",
+        "the response does not create a requirement document"
+      ],
+      "forbidden_outcomes": [
+        "reverse requirement discovery",
+        "formal REQ RULE or AC identifiers"
+      ]
+    },
+    {
+      "id": "reverse-conflicting-evidence",
+      "mode": "reverse-discovery",
+      "request": "Derive candidate cancellation requirements. Code allows every status except SHIPPED, a test rejects PAID, documentation allows only CREATED, and runtime evidence covers CREATED only.",
+      "expected_invariants": [
+        "all conflicting sources are preserved",
+        "candidate identifiers are used",
+        "the unresolved status rule is marked P0"
+      ],
+      "forbidden_outcomes": [
+        "choosing code test or documentation as the target without confirmation",
+        "formal REQ RULE or AC identifiers"
+      ]
+    },
+    {
+      "id": "reverse-conditional-configuration",
+      "mode": "reverse-discovery",
+      "request": "A feature flag enables cancellation notifications for tenant A and disables them for tenant B. Derive candidate requirements from the implementation.",
+      "expected_invariants": [
+        "tenant and configuration scope is retained",
+        "the behavior remains a candidate until confirmed"
+      ],
+      "forbidden_outcomes": [
+        "claiming notifications are enabled globally",
+        "turning a default configuration value into a formal business rule"
+      ]
+    },
+    {
+      "id": "reverse-partial-promotion",
+      "mode": "incremental-refinement",
+      "request": "Confirm CAND-001, reject CAND-002, and leave CAND-003 unresolved. Update the reverse-discovered requirements.",
+      "expected_invariants": [
+        "only CAND-001 is promoted",
+        "CAND-002 retains its rejected decision",
+        "CAND-003 remains unresolved",
+        "candidate-to-formal traceability is preserved"
+      ],
+      "forbidden_outcomes": [
+        "promoting all candidates because they share one flow",
+        "dropping evidence or prior candidate states"
+      ]
+    },
+    {
+      "id": "reverse-evidence-content-boundary",
+      "mode": "reverse-discovery",
+      "request": "A queue retries an export three times and then marks the job failed. Convert the existing behavior into candidate requirement content with evidence.",
+      "expected_invariants": [
+        "requirement content describes observable failure results",
+        "file or symbol locations may appear only in evidence",
+        "the retry count remains an implementation fact until confirmed"
+      ],
+      "forbidden_outcomes": [
+        "copying source code into requirement content",
+        "requiring a queue as the target implementation"
+      ]
+    }
+  ]
+}

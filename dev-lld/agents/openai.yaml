@@ -1,0 +1,4 @@
+interface:
+  display_name: "LLD 详细设计"
+  short_description: "将跨业务领域的后端与系统集成需求转化为可执行详细设计"
+  default_prompt: "使用 $dev-lld 从需求、概要设计和现有实现创建或评审后端与系统集成详细设计。"
