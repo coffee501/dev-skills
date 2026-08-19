@@ -1,6 +1,6 @@
 interface:
   display_name: "HLD 概要设计"
-  short_description: "结合需求与存量实现，形成可追踪、兼容且不过度设计的系统概要设计"
+  short_description: "Produce traceable, compatible, and minimally-designed system overviews from confirmed requirements and existing implementations | 结合需求与存量实现，形成可追踪、兼容且不过度设计的系统概要设计"
   default_prompt: "使用 $dev-hld 从需求基线和现有实现创建、评审或增量完善系统概要设计。"
   icon_small: "./assets/icon.svg"
   icon_large: "./assets/icon.svg"

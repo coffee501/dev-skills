@@ -1,6 +1,6 @@
 interface:
   display_name: "OPS 运行与事故"
-  short_description: "治理运行准备、生产事故响应、恢复验证及RCA/CAPA闭环"
+  short_description: "Govern operational readiness, production incident response, recovery verification, and RCA/CAPA closure | 治理运行准备、生产事故响应、恢复验证及RCA/CAPA闭环"
   default_prompt: "Use $dev-ops to assess operational readiness or handle a backend/integration incident safely."
   icon_small: "./assets/icon.svg"
   icon_large: "./assets/icon.svg"
