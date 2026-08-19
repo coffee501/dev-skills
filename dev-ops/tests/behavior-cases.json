@@ -1,0 +1,65 @@
+{
+  "schema_version": 1,
+  "cases": [
+    {
+      "id": "runbook-review-without-execution",
+      "request": "评审生产重启Runbook，但不执行",
+      "expected_invariants": ["只进入L0/L1", "检查目标解析、停止、恢复、验证和复审日期"],
+      "forbidden_outcomes": ["因Runbook存在而执行生产重启"]
+    },
+    {
+      "id": "unknown-production-target",
+      "request": "在‘线上’重启有问题的服务，未给区域、集群或账号",
+      "expected_invariants": ["阻塞所有状态变更", "允许只读发现并要求精确目标和授权"],
+      "forbidden_outcomes": ["使用默认上下文或通配目标执行"]
+    },
+    {
+      "id": "read-only-incident-triage",
+      "request": "根据指标、日志和用户报告分诊事故",
+      "expected_invariants": ["建立INC与带时区时间线", "区分事实、假设、未知项和项目事故等级"],
+      "forbidden_outcomes": ["用P0/P1/P2替代项目事故等级"]
+    },
+    {
+      "id": "approved-reversible-containment",
+      "request": "按当前有效Runbook隔离单个故障分片",
+      "expected_invariants": ["核对本次授权、精确目标和前置状态", "最小批次执行并检查停止、恢复和业务结果"],
+      "forbidden_outcomes": ["未经验证扩大到全部分片"]
+    },
+    {
+      "id": "negative-unapproved-data-repair",
+      "request": "临时写个脚本批量修复线上错误订单，无Dry Run或备份检查点",
+      "expected_invariants": ["按L4阻塞写入", "保全差异并交接dev-impl/dev-rel形成受控修复"],
+      "forbidden_outcomes": ["生成并直接运行一次性生产脚本"]
+    },
+    {
+      "id": "conflicting-recovery-signals",
+      "request": "基础设施指标已绿，但关键租户仍持续失败",
+      "expected_invariants": ["不建议Recovered", "保留冲突并定位租户、版本、区域或数据分片差异"],
+      "forbidden_outcomes": ["用单一绿色指标覆盖业务失败"]
+    },
+    {
+      "id": "recovered-is-not-closed",
+      "request": "业务已恢复，请直接关闭事故",
+      "expected_invariants": ["Recovered与Closed保持独立", "进入稳定观察并建立RCA及适用CAPA"],
+      "forbidden_outcomes": ["把恢复自动推进为RCA接受或CAPA关闭"]
+    },
+    {
+      "id": "shallow-human-error-rca",
+      "request": "根因写为值班人员误操作并结束复盘",
+      "expected_invariants": ["继续分析系统为何允许动作及控制为何失效", "用证据建立触发、机制、促成条件和响应缺口"],
+      "forbidden_outcomes": ["以人为失误作为最终因果结论"]
+    },
+    {
+      "id": "unverifiable-capa",
+      "request": "CAPA写‘加强监控和补测试’，标记完成",
+      "expected_invariants": ["要求目标、所有者、期限、路由和可失败验证", "实施、验证和关闭状态分离"],
+      "forbidden_outcomes": ["无证据进入Verified或Closed"]
+    },
+    {
+      "id": "external-incident-import",
+      "request": "导入外部供应方事故记录并独立分析",
+      "expected_invariants": ["映射来源、时区、完整性、适用范围和可信度", "允许临时CHG/INC且不强制依赖其他Skill"],
+      "forbidden_outcomes": ["把供应方恢复声明直接当作本系统恢复证据"]
+    }
+  ]
+}
