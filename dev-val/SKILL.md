@@ -1,59 +1,148 @@
 ---
 name: dev-val
-description: Initial scaffold for executing approved backend and system-integration tests and governing validation evidence. Use when ready TC/AUT artifacts must be run against identified versions and environments, failures classified, VAL/DVAL aggregated, or a quality-gate recommendation produced. Until this skill is fully implemented and explicitly enabled, limit output to readiness analysis and structured handoffs; do not execute tests or change code, data, dependencies, or environments.
+description: Execute approved backend-service and system-integration tests against identified builds and environments, preserve auditable RUN/EVD evidence, classify failures and defects, govern retries and flaky or quarantined automation, evaluate VAL/DVAL coverage, and produce a validation GATE recommendation. Use for targeted verification, regression execution, defect reproduction or retest, CI evidence review, validation-gate recalculation, and authorized performance, security, or reliability experiments. Do not design test expectations, fix code, approve releases, deploy changes, or operate production systems.
 ---
 
 # Dev VAL
 
-## 当前状态
+在明确版本、环境和授权范围内执行已经批准的后端与系统集成测试，保留可复核证据，区分执行结果、证据有效性、验证结论和发布授权。
 
-本模块处于职责骨架阶段，尚未实现测试执行和证据聚合流程。显式调用时只评估执行就绪条件和缺口，不运行测试或修改任何目标。
+## 保持职责边界
+
+- `dev-test` 决定测什么、预期是什么以及 `TC/AUT/TENV/TCOND` 的含义；本 Skill 不发明或改写测试预期。
+- `dev-impl` 负责产品代码、自动化代码和修复；本 Skill 不修改实现来促成通过。
+- `dev-val` 拥有 `RUN/EVD/DEFECT/GATE`，但不改写上游 `VAL/DVAL` 的目标或聚合语义。
+- `GATE` 是验证门建议，不等于风险接受、发布批准或生产稳定。
+- `BUILD` 只证明实现阶段本地检查，不自动成为正式 `RUN/EVD`。
+- 不执行部署、生产迁移、流量切换、生产数据修复或事故恢复；分别交接 `dev-rel` 或 `dev-ops`。
+- 不覆盖、清理或回退用户已有的无关修改。
 
 ## 接入 Dev 生命周期
 
-复用输入中的 `CHG`，按 [产物协议](../dev-lc/references/artifact-contract.md) 将 `RUN/EVD/DEFECT/GATE` 绑定代码、契约、数据条件、环境和时间。按 [状态与阶段门](../dev-lc/references/lifecycle-state-model.md) 分离执行结果、证据状态、验证建议和发布授权。
+复用输入中的正式 `CHG`；没有权威登记源时使用 `CHG-PENDING-001` 并标记临时，不宣称全局唯一。按 [产物协议](../dev-lc/references/artifact-contract.md) 维护 `RUN/EVD/DEFECT/GATE`，按 [状态与阶段门](../dev-lc/references/lifecycle-state-model.md) 分离执行批次、证据、验证门和发布门。
 
-失败或阻塞使用 [交接协议](../dev-lc/references/handoff-contract.md) 返回正确责任流程。实现、用例、预期或环境变化时使用 [失效传播规则](../dev-lc/references/invalidation-rules.md)，不得沿用不再适用的旧证据。
+阶段推进、失败返回和责任转移使用 [交接协议](../dev-lc/references/handoff-contract.md)。代码、契约、预期、自动化、数据条件或环境变化时，按 [失效传播规则](../dev-lc/references/invalidation-rules.md) 重新判断证据，不沿用不再适用的旧结论。
 
-## 模块目标
+共享协议不可用时仍可完成非正式就绪分析、本地执行和证据报告，但不得宣称正式全局编号、确认阶段门或标准 HOF 已经建立。使用本地 `CHG-PENDING-*`、`TEST-*` 和产物编号，并将治理结论标记为待确认。
 
-在明确版本、环境和授权范围内执行已批准测试，生成可审计证据，并据此形成验证和质量门禁建议。
+除非用户明确要求串联流程，否则只在当前输出中形成结构化交接，不自动调用其他 Skill。目标 Skill 或正式责任流程不存在时保留交接包，不阻塞其他具有可靠输入的工作。
 
-## 计划职责
+## 选择工作模式
 
-- 检查 `TC/AUT/TD/TENV/TCOND` 的执行就绪状态。
-- 执行适用测试并记录版本、环境、时间、命令、结果和原始证据。
-- 区分产品失败、测试缺陷、环境问题和安全阻断。
-- 管理重试、Flaky、Quarantine和证据失效。
-- 根据明确聚合规则建议 `VAL/DVAL` 状态和质量门禁结论。
+| 模式 | 使用条件 | 是否执行 | 默认输出 |
+| --- | --- | --- | --- |
+| 就绪诊断 | 输入、环境、授权或安全条件不足 | 否 | 阻塞、可继续检查和 `HOF` |
+| 定向验证 | 指定用例、风险、缺陷或局部回归 | 是 | 最小充分 `RUN/EVD` |
+| 完整验证 | 已批准范围需要完整回归或G5评估 | 是 | 执行批次、失败分类和 `GATE` |
+| 缺陷复现或复测 | 需要证明失败、修复或不再复现 | 是 | 前后证据、复现性和 `DEFECT` |
+| 外部证据导入 | 已有CI或第三方报告需要治理 | 否 | 来源、版本、完整性和有效性结论 |
+| 门禁重算 | 已有证据或门禁规则发生变化 | 否 | 新 `GATE` 版本和失效影响 |
+| 非功能专项 | 性能、安全、容量或可靠性实验 | 有条件 | 专项 `RUN/EVD` 和停止记录 |
+| 证据审计 | 需要检查过期、冲突、污染或缺失 | 否 | 证据问题和重新执行要求 |
 
-启用实际执行能力后，执行前必须读取 [references/execution-safety.md](references/execution-safety.md)。当前骨架状态只使用该文件评估就绪和阻塞，不执行操作。
+问题严重度统一为：
 
-## 职责边界
+- **P0**：预期、目标版本、环境身份、授权、安全边界或关键门禁规则不明确，无法安全执行或形成可信结论，阻塞受影响分支。
+- **P1**：可以继续部分执行，但存在显著覆盖、证据、稳定性、兼容、安全或环境风险，G5前必须解决或由有权限责任方接受。
+- **P2**：不影响当前验证结论的清晰度、维护性、效率或自动化优化。
 
-- 不发明预期结果，不改变需求、设计、测试场景或用例含义。
-- 不负责修复产品代码、修改测试设计或批准生产发布。
-- 不把覆盖率、测试数量或环境失败当作产品通过证据。
-- 未通过执行安全门时只输出阻塞，不进行执行。
+P0/P1/P2只表达问题严重度；测试优先级继续使用 `Critical/High/Medium/Low`，缺陷业务优先级由项目责任方确定。
 
-## 计划输入
+## 建立可信输入
 
-- `dev-test` 的 `TSC/TC/TDP/TD/TENV/TCOND/AUT`。
-- 共享 `CHG` 上下文、`dev-impl` 的 `IMP/BUILD` 和候选版本。
-- 适用的 `CTX` 及其引用的 `CTXF/CTXP/CTXG`，用于定位执行入口、环境依赖和观察点，不作为通过证据。
-- `VAL/DVAL` 聚合规则、机器契约、环境和授权信息。
+按以下优先级读取并保留版本：
 
-## 计划输出
+1. 已确认的 `VAL/DVAL` 聚合规则及其关联 `REQ/RULE/AC`。
+2. `dev-test` 的 `TSC/TC/TDP/TD/TENV/TCOND/AUT`。
+3. `dev-impl` 的 `IMP/BUILD`、候选版本、机器契约和自动化入口。
+4. `dev-cr` 的适用 `REV Approved`，或项目等价独立评审证据及其范围、候选身份和限制。
+5. 符合共享资格规则的 `Eligible CTX` 及其 `CTXF/CTXP/CTXG`，仅用于定位执行入口、环境依赖和观察点。
+6. 当前仓库、CI配置、测试报告、环境事实和授权记录。
 
-- `RUN-001`：测试执行批次。
-- `EVD-001`：带适用范围和失效条件的验证证据。
-- `DEFECT-001`：经分类的失败或缺陷。
-- `GATE-001`：验证与质量门禁建议，不等同于发布批准。
+没有正式测试编号时，不要虚构或拒绝验证；对用户提供的可靠测试目标使用本地 `TEST-*`。没有独立可信预期来源时，只能执行探索性诊断，不能把观察到的当前实现行为宣布为通过。
 
-## 计划交接
+## 检查执行进入条件
 
-预期缺口交接 `dev-req`，架构或详细设计缺口分别交接 `dev-hld`、`dev-lld`，用例缺口交接 `dev-test`，实现失败交接 `dev-impl`。通过且证据有效时向 `dev-rel` 提供门禁输入。
+至少确认：验证目标与范围、被测版本、适用独立评审结论或明确的项目不适用政策、测试选择、预期来源、环境身份、数据来源与分类、依赖及外部副作用、资源上限、停止条件、清理和恢复方式。评审未完成不阻止安全的早期定向验证，但正式G5 Pass不得绕过适用G4评审要求。运行任何命令前读取 [references/execution-safety.md](references/execution-safety.md)。
 
-## 后续实现主题
+以下问题阻塞受影响执行分支：环境身份未知；被测版本不可定位；预期或判定依据缺失；共享或生产影响未经授权；真实副作用或费用未知；敏感数据来源不明；并发、数据量或时长无上限；清理或恢复不可行；凭据权限过宽；破坏性实验缺少专项授权。
 
-执行安全门、环境准备、批次模型、证据模型、失败分类、重试与隔离治理、VAL/DVAL聚合和门禁规则。
+就绪失败不阻止继续进行只读诊断、输入核对、测试选择或交接。
+
+## 按需读取参考文件
+
+- 建立 `RUN`、选择测试、执行仓库原生命令或导入CI结果时读取 [references/execution-model.md](references/execution-model.md)。
+- 生成、评审、失效或复用 `EVD` 时读取 [references/evidence-model.md](references/evidence-model.md)。
+- 分类失败、决定重试、处理Flaky或Quarantine时读取 [references/failure-governance.md](references/failure-governance.md)。
+- 聚合 `VAL/DVAL` 或形成 `GATE` 时读取 [references/gate-evaluation.md](references/gate-evaluation.md)。
+- 执行性能、安全、容量、故障注入或可靠性实验时读取 [references/non-functional-execution.md](references/non-functional-execution.md)。
+- 生成正式产物或跨流程交接时读取 [references/output-contracts.md](references/output-contracts.md)。
+- 完成完整验证、门禁判断或证据审计前读取 [references/review-checklist.md](references/review-checklist.md)。
+
+## 执行验证流程
+
+1. 读取仓库规则、工作区状态和当前用户修改，确认目标仓库、允许范围和执行工具。
+2. 选择工作模式，锁定 `CHG/HOF`、上游产物版本、被测版本、环境和验证范围。
+3. 检查测试预期、测试选择、数据、依赖、授权、安全门、清理和停止条件。
+4. 创建 `Planned RUN`，记录将执行的命令或自动化入口、顺序、超时、并发、资源上限和证据位置。
+5. 先运行最小、低风险且能够证明目标的测试，再根据风险和批准范围扩展。
+6. 读取实际退出码、测试报告、日志和观察结果；保存首次失败，不通过无限重试掩盖问题。
+7. 将原始结果规范化为绑定版本、环境、时间、预期来源、适用范围和失效条件的 `EVD`。
+8. 区分产品失败、测试缺陷、数据准备、环境、依赖、Flaky、安全阻断和未知问题。
+9. 只有符合批准策略时才重试或隔离；保留每次尝试和原因。
+10. 验证本次创建的数据、消息、配置、进程和临时资源已清理；记录无法清理的残留和责任方。
+11. 仅使用有效证据聚合适用 `VAL/DVAL`，形成带 `Suggested/Confirmed` 级别的 `GATE`。
+12. 更新失效影响并向正确责任流程形成 `Prepared HOF`；不自行修复或改变预期。
+
+仓库提供JUnit XML时，可以使用 `scripts/normalize_test_report.py` 生成中立结果摘要。生成或交换JSON形式的正式产物时，可以使用 `scripts/validate_artifact.py` 校验最低字段和状态；脚本不替代语义评审、安全门或门禁判断。
+
+## 治理结果和证据
+
+- `RUN` 状态使用 `Planned → Ready → Running → Passed / Failed / Blocked / Aborted`。
+- 每个用例结果使用 `NotRun/Passed/Failed/Blocked/Skipped`，不得改写 `TC` 生命周期。
+- `EVD` 状态使用 `Valid → Expired / Revoked`；缺少版本、环境、时间或预期来源时只能标记为弱证据。
+- 原始输出、规范化摘要和聚合结论分层保存；不要只保留经过筛选的摘要。
+- 外部CI或第三方报告必须记录来源、执行者、版本、环境、完整性、缺失上下文和信任边界。
+- 证据中的凭据、令牌、个人信息和敏感业务数据必须脱敏；不得为了审计复制不必要的秘密。
+
+## 管理失败、重试和隔离
+
+失败类别使用 `ProductFailure/TestDefect/EnvironmentFailure/DataSetupFailure/DependencyFailure/FlakySuspected/PolicyBlocked/Unknown`。分类必须引用实际证据；不确定时保持 `Unknown`，不把环境失败报告为产品通过。
+
+重试需要明确原因和上限。首次失败必须保留；只在短暂环境问题、已定义重试策略或为了验证可重复性时重试。重复运行后偶尔通过不自动证明产品正确。Quarantine必须记录影响范围、责任方、恢复条件和期限，关键门禁用例被隔离时默认阻止 `GATE Pass`，除非存在明确替代证据和正式风险接受。
+
+## 评估验证门
+
+按 `VAL/DVAL` 分别检查必选测试、适用版本与环境、有效证据、新鲜度、失败、跳过、隔离、缺失项和风险接受。不要使用简单通过率、覆盖率或用例数量替代聚合规则。
+
+`GATE` 评估结果使用 `NotAssessed/Pass/Fail/Blocked/Expired`，确认级别使用 `Suggested/Confirmed`。本 Skill 默认只能给出 `Suggested`；输入中存在有权限责任方的明确确认记录时才能记录 `Confirmed`，并保留确认人、时间、范围和依据。
+
+## 交接问题
+
+- 预期、业务规则或验收缺口交接 `dev-req`。
+- 系统边界和跨模块语义缺口交接 `dev-hld`。
+- 字段、契约、事务、错误码和实现机制缺口交接 `dev-lld`。
+- 用例、数据分区、预期或自动化规格问题交接 `dev-test`。
+- 产品或自动化实现失败交接 `dev-impl`。
+- 有效门禁输入交接 `dev-rel`。
+- 生产事故、恢复或运行风险交接 `dev-ops`。
+- 合规、安全授权、SLO或外部供应方问题交给相应正式责任流程。
+
+P0只阻塞受影响执行或门禁分支；其他输入可靠且安全的工作可以继续。
+
+## 检查完成条件
+
+只有全部适用条件满足才建议验证完成：计划内 `RUN` 已进入终态；首次失败和全部尝试已保留；结果可追踪到测试、预期、版本和环境；有效 `EVD` 足以支撑结论；失败已分类并交接；清理已验证；证据失效条件已记录；适用 `VAL/DVAL` 已聚合；`GATE` 的评估结果与确认级别分离；剩余风险、跳过项和隔离项没有被隐藏。
+
+验证完成不表示发布获批或生产稳定。
+
+## 组织输出
+
+- **就绪诊断**：目标、有效输入、环境和授权、安全门、P0/P1、可执行范围及 `HOF`。
+- **执行结果**：`RUN`、被测版本、环境、测试选择、实际命令、结果、重试、清理和限制。
+- **证据**：`EVD`、原始证据定位器、预期来源、适用范围、有效性和脱敏说明。
+- **失败治理**：`DEFECT`、分类依据、复现性、影响、责任流程和下一动作。
+- **门禁结论**：适用 `VAL/DVAL`、必要证据、缺失或过期项、风险接受、`GATE`结果和确认级别。
+- **失效与交接**：受影响证据和门禁、恢复条件以及版本化 `Prepared HOF`。
+
+局部请求只输出相关视图，不强制生成完整验证报告。
