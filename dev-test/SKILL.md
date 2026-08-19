@@ -13,6 +13,9 @@ description: Create, diagnose, review, and refine risk-driven, traceable test de
 
 需要统一追踪时读取 [产物协议](../dev-lc/references/artifact-contract.md)；将执行任务交给验证流程或将语义缺口返回上游时读取 [交接协议](../dev-lc/references/handoff-contract.md)；需求、设计、实现、环境或预期变化时读取 [失效传播规则](../dev-lc/references/invalidation-rules.md)。测试设计基线、执行就绪、验证通过和发布门禁遵循 [状态与阶段门](../dev-lc/references/lifecycle-state-model.md)，保持相互独立。
 
+共享协议不可用时仍可独立完成测试诊断、设计、评审、回归选择和执行准备，使用本地测试标识并保留来源、适用范围、
+风险和证据；不得宣称正式全局编号、G5、自动化门禁或标准HOF已经确认。
+
 ## 保持职责边界
 
 负责测试什么、为什么测试、如何准备、如何执行以及观察什么结果。默认不要：
@@ -37,7 +40,7 @@ description: Create, diagnose, review, and refine risk-driven, traceable test de
 1. 已确认的 `REQ/RULE/AC`
 2. `DEC/MOD/FLOW/VAL` 和 `DET/DDEC/DVAL`
 3. `DATA/MIG/API/EVT/JOB/CFG` 及机器可读契约
-4. 范围和版本匹配的有效 `CTX` 及其引用的 `CTXF/CTXP/CTXG`
+4. 符合共享资格规则的 `Eligible CTX` 及其引用的 `CTXF/CTXP/CTXG`
 5. 当前代码、现有测试、数据库、配置、部署和运行证据
 6. 历史缺陷、事故、变更记录和当前对话结论
 

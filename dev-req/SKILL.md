@@ -35,7 +35,7 @@ description: Analyze, clarify, review, and iteratively refine software product o
 
 读取用户提供的需求、项目资料、已有实现证据及当前对话中已确认的内容，并区分：
 
-存在范围和版本匹配的有效 `CTX` 及其引用的 `CTXF/CTXP/CTXG` 时，优先将其作为As-Is实现证据，避免重复扫描；只使用与当前业务
+存在符合共享资格规则的 `Eligible CTX` 及其引用的 `CTXF/CTXP/CTXG` 时，优先将其作为As-Is实现证据，避免重复扫描；只使用与当前业务
 问题相关的裁剪视图。`CTX` 不构成业务确认，`CTXG` 必须保留为待确认或冲突，不能直接转成正式需求。
 
 - **已确认**：可写入正式需求。

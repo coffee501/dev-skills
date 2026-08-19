@@ -1,11 +1,11 @@
 ---
 name: dev-impl
-description: Implement approved backend-service and system-integration changes from requirements, HLD, LLD, test-automation specifications, and current repository evidence. Use when Codex must modify application or test code, machine-readable contracts, database migrations, configuration, jobs, events, or integration adapters; apply a defect fix or behavior-preserving refactor; run local build, lint, type, static, contract, migration, or targeted-test checks; and produce traceable IMP/BUILD artifacts plus review and dev-val handoffs. Do not change business or architecture decisions, produce formal EVD/GATE validation evidence, deploy releases, or operate production systems.
+description: Implement approved backend-service and system-integration changes from requirements, HLD, LLD, test-automation specifications, and current repository evidence. Use when modifying application or test code, machine-readable contracts, database migrations, configuration, jobs, events, or integration adapters; applying a defect fix or behavior-preserving refactor; running local build, lint, type, static, contract, migration, or targeted-test checks; and producing traceable IMP/BUILD artifacts plus review and dev-val handoffs. Do not change business or architecture decisions, produce formal EVD/GATE validation evidence, deploy releases, or operate production systems.
 ---
 
 # Dev IMPL
 
-将已确认的后端与系统集成设计转化为范围受控、可追踪、可评审、可验证和可恢复的实际实现。优先遵循目标仓库的 `AGENTS.md`、工程约定和现有模式。
+将已确认的后端与系统集成设计转化为范围受控、可追踪、可评审、可验证和可恢复的实际实现。优先遵循目标仓库的 `AGENTS.md`、`CLAUDE.md`、工程约定和现有模式。
 
 ## 保持职责边界
 
@@ -14,6 +14,7 @@ description: Implement approved backend-service and system-integration changes f
 - 不改变 `REQ/RULE/AC`、系统边界、模块职责、数据权威或已接受 `DEC/DDEC`。
 - 不用实现便利性替代业务、架构或失败语义决策。
 - `AUT` 规格归 `dev-test`；本 Skill 只实现其对应测试代码并建立 `IMP(kind=test-automation)`。
+- `REV` 归 `dev-cr` 或项目等价独立评审流程；本 Skill 不自行将实现标记为评审批准。
 - `BUILD` 只记录实现阶段本地检查；正式 `RUN/EVD/GATE` 归 `dev-val`。
 - 不执行发布、生产迁移、生产流量或生产数据操作；分别交接 `dev-rel` 或 `dev-ops`。
 - 不覆盖、清理或回退用户已有的无关修改。
@@ -22,7 +23,10 @@ description: Implement approved backend-service and system-integration changes f
 
 按 [产物协议](../dev-lc/references/artifact-contract.md) 维护 `IMP/BUILD`，按 [状态与阶段门](../dev-lc/references/lifecycle-state-model.md) 区分实现、本地检查、独立验证和发布状态。阶段推进、问题返回和责任转移使用 [交接协议](../dev-lc/references/handoff-contract.md)。设计、契约、代码、数据或配置变化时按 [失效传播规则](../dev-lc/references/invalidation-rules.md) 标识潜在影响。
 
-存在范围和版本匹配的有效 `CTX` 及其引用的 `CTXF/CTXP/CTXG` 时，将其作为As-Is和影响分析输入；实施前仍核对当前工作区与目标
+共享协议不可用时仍可独立完成范围明确的实现、修复、重构、迁移和自动化代码工作，使用本地 `IMP/BUILD/REV-PENDING-*`
+引用并保留来源、候选、适用范围、风险和证据；不得宣称正式G4、全局编号、独立评审或标准HOF已经确认。
+
+存在符合共享资格规则的 `Eligible CTX` 及其引用的 `CTXF/CTXP/CTXG` 时，将其作为As-Is和影响分析输入；实施前仍核对当前工作区与目标
 版本，只刷新变更涉及的事实和路径。`CTX` 不替代批准设计、实际代码检查或 `BUILD` 证据。
 
 ## 选择工作模式
@@ -82,7 +86,7 @@ description: Implement approved backend-service and system-integration changes f
 9. 先执行受影响范围内最小检查，再按风险扩展到类型、静态、构建、契约和相关测试。
 10. 记录 `BUILD`、失败分类、未运行检查、设计偏差和剩余风险。
 11. 更新 `IMP` 状态和追踪，传播需要复审的 `TC/AUT/EVD/GATE/REL`，不得自行改写其状态。
-12. 形成代码评审输入和面向 `dev-val` 的 `HOF`；未达到完成条件时明确阻塞和可继续内容。
+12. 形成面向 `dev-cr` 的代码评审 `HOF`；已有适用 `REV Approved` 时，再形成面向 `dev-val` 的验证 `HOF`。未达到完成条件时明确阻塞和可继续内容。
 
 ## 处理设计偏差
 
@@ -96,7 +100,7 @@ description: Implement approved backend-service and system-integration changes f
 
 ## 检查实现完成
 
-只有全部适用条件满足才建议实现完成：计划内 `IMP` 已实施；实际修改可追踪到有效输入；代码、契约、配置和迁移一致；必要 `BUILD` 检查通过；用户修改未被覆盖；迁移和不兼容变化可恢复；设计偏差已解决或交接；下游潜在影响已经标识；代码评审输入和 `dev-val` 交接已形成。
+只有全部适用条件满足才建议实现完成：计划内 `IMP` 已实施；实际修改可追踪到有效输入；代码、契约、配置和迁移一致；必要 `BUILD` 检查通过；用户修改未被覆盖；迁移和不兼容变化可恢复；设计偏差已解决或交接；下游潜在影响已经标识；面向 `dev-cr` 的评审输入已形成。`IMP Reviewed` 还必须引用适用 `REV Approved` 或项目等价独立评审证据；面向 `dev-val` 的正式验证交接在此之后形成。
 
 实现完成不表示代码评审通过、`VAL/DVAL`通过、发布获批或生产稳定。`Reviewed/Integrated` 状态只有存在相应评审或集成证据时才能使用。
 
@@ -106,6 +110,6 @@ description: Implement approved backend-service and system-integration changes f
 - **实施结果**：`CHG`引用、`IMP`状态、变更文件和符号、保持项、实际偏差。
 - **BUILD**：候选版本、工作区、依赖摘要、环境、命令时间与退出码、产物、限制和失败分类。
 - **影响传播**：需要复审或重新验证的测试、证据、门禁和发布产物。
-- **交接**：代码评审输入、面向 `dev-val` 的版本化 `HOF`、剩余风险和验证要求。
+- **交接**：面向 `dev-cr` 的评审输入；评审批准后面向 `dev-val` 的版本化 `HOF`、剩余风险和验证要求。
 
 完整实现或完成判断前读取评审清单；局部修改只执行与风险直接相关的检查。

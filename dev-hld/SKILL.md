@@ -13,6 +13,9 @@ description: Create, review, and refine system-level overview designs from confi
 
 需要统一产物和追踪时读取 [产物协议](../dev-lc/references/artifact-contract.md)；形成详细设计或测试设计交接时读取 [交接协议](../dev-lc/references/handoff-contract.md)；需求、决策、边界或现有实现变化时读取 [失效传播规则](../dev-lc/references/invalidation-rules.md)。阶段门和基线含义遵循 [状态与阶段门](../dev-lc/references/lifecycle-state-model.md)，概要设计基线不代表实现或验证通过。
 
+共享协议不可用时仍可独立完成概要设计诊断、设计、评审和详细设计拆分，使用本地临时标识并保留来源、范围、风险和
+证据；不得宣称正式G2、全局编号或标准HOF已经确认，也不因治理模块缺失而虚构状态。
+
 ## 保持职责边界
 
 聚焦系统整体如何拆分、各部分如何协作，以及架构为什么这样设计。
@@ -100,7 +103,7 @@ description: Create, review, and refine system-level overview designs from confi
 
 > As-Is 现有实现 → To-Be 目标设计 → Gap 差异 → Impact 影响 → Transition 过渡 → Verification 验证
 
-存在覆盖目标范围和版本的 `Ready CTX` 及其引用的 `CTXF/CTXP/CTXG` 时优先复用，并检查其新鲜度、证据边界和当前设计问题所需
+存在符合共享资格规则的 `Eligible CTX` 及其引用的 `CTXF/CTXP/CTXG` 时优先复用，并检查其新鲜度、证据边界和当前设计问题所需
 的最小充分性。只对缺失、冲突或潜在过期部分做定向核验，不重复全量发现。没有可用 `CTX` 时可以为当前设计建立
 最小只读As-Is证据；若上下文需要被多个阶段复用、仓外信息缺失或缺口阻塞设计，形成面向 `dev-ctx` 的 `Prepared HOF`。
 `dev-hld` 不创建或改写 `CTX` 编号和状态。

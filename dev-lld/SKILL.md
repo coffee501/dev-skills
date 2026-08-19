@@ -13,6 +13,9 @@ description: Create, diagnose, review, and refine implementation-ready detailed 
 
 需要产物和追踪规则时读取 [产物协议](../dev-lc/references/artifact-contract.md)；向实现和测试设计交接时读取 [交接协议](../dev-lc/references/handoff-contract.md)；设计、契约或实现事实变化时读取 [失效传播规则](../dev-lc/references/invalidation-rules.md)。`VAL/DVAL` 的非 `Planned` 状态必须由适用版本和环境中的有效执行证据支持，详细设计不得自行宣布验证通过。
 
+共享协议不可用时仍可独立完成详细设计诊断、设计、评审和实现任务拆分，使用本地临时标识并保留来源、适用范围、
+风险和证据；不得宣称正式G3、全局编号或标准HOF已经确认。
+
 ## 保持职责边界
 
 详细设计回答“模块内部具体如何实现”。继承而不重复维护需求事实与概要设计结论。
@@ -38,14 +41,14 @@ description: Create, diagnose, review, and refine implementation-ready detailed 
 
 1. 已确认的 `REQ`、`RULE` 和 `AC`
 2. 已接受的 `DEC`、`MOD`、`FLOW` 和概要设计约束
-3. 范围和版本匹配的有效 `CTX` 及其引用的 `CTXF/CTXP/CTXG`
+3. 符合共享资格规则的 `Eligible CTX` 及其引用的 `CTXF/CTXP/CTXG`
 4. 当前有效代码、数据库、接口、配置、部署和运行证据
 5. 历史设计与变更记录
 6. 当前对话中的明确结论
 
 区分已确认、实现证据、合理推断、待确认、存在冲突和已废止。现有代码只能证明当前可能如何实现，不能单独证明业务行为正确或未来必须保留。设计名称尚未确定时使用逻辑名称，不要伪造真实类、表或接口名称。
 
-有效 `CTX` 已覆盖当前设计问题时直接引用其编号和版本；只对 `CTXG`、潜在过期项或详细设计所需新增深度做定向核验，
+`Eligible CTX` 已覆盖当前设计问题时直接引用其编号和版本；只对 `CTXG`、潜在过期项或详细设计所需新增深度做定向核验，
 不由本 Skill 改写 `CTX` 状态。
 
 ## 选择工作模式

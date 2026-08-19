@@ -5,7 +5,7 @@
 ## IMP
 
 ```yaml
-protocol_version: DEV-SUITE-5.0
+protocol_version: DEV-SUITE-7.0
 id: IMP-001
 type: implementation
 change: CHG-001
@@ -24,6 +24,7 @@ rollback: []
 deviations: []
 risks: []
 evidence: []
+review_refs: []
 owner: pending
 updated_at: YYYY-MM-DDThh:mm:ss+08:00
 ```
@@ -33,7 +34,7 @@ updated_at: YYYY-MM-DDThh:mm:ss+08:00
 ## BUILD
 
 ```yaml
-protocol_version: DEV-SUITE-5.0
+protocol_version: DEV-SUITE-7.0
 id: BUILD-001
 type: local-check-batch
 change: CHG-001
@@ -61,5 +62,6 @@ updated_at: YYYY-MM-DDThh:mm:ss+08:00
 ## HOF 摘要
 
 按共享交接协议输出 `Prepared HOF`，至少包含 `from/to/reason/inputs/preserved_behavior/unresolved/invalidated/`
-`expected_outputs/entry_conditions/owner`。面向 `dev-val` 时补充候选版本、环境、数据条件、测试入口、已知限制和
-需要形成的 `RUN/EVD/GATE`；面向 `dev-rel` 时补充顺序、窗口、限速、观察、停止和恢复条件。
+`expected_outputs/entry_conditions/owner`。先面向 `dev-cr` 补充候选身份、实现范围、设计依据、构建结果、敏感边界和需要形成的
+`REV`；评审批准后面向 `dev-val` 补充 `REV` 引用、候选版本、环境、数据条件、测试入口、已知限制和需要形成的
+`RUN/EVD/GATE`；面向 `dev-rel` 时补充顺序、窗口、限速、观察、停止和恢复条件。
