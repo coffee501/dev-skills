@@ -1,6 +1,6 @@
 ---
 name: dev-impl
-description: Implement approved backend-service and system-integration changes from requirements, HLD, LLD, test-automation specifications, and current repository evidence. Use when modifying application or test code, machine-readable contracts, database migrations, configuration, jobs, events, or integration adapters; applying a defect fix or behavior-preserving refactor; running local build, lint, type, static, contract, migration, or targeted-test checks; and producing traceable IMP/BUILD artifacts plus review and dev-val handoffs. Do not change business or architecture decisions, produce formal EVD/GATE validation evidence, deploy releases, or operate production systems.
+description: "Implement approved backend-service and system-integration changes from requirements, HLD, LLD, test-automation specifications, and current repository evidence. Use when modifying application or test code, machine-readable contracts, database migrations, configuration, jobs, events, or integration adapters; applying a defect fix or behavior-preserving refactor; running local build, lint, type, static, contract, migration, or targeted-test checks; and producing traceable IMP/BUILD artifacts plus review and dev-val handoffs. Do not change business or architecture decisions, produce formal EVD/GATE validation evidence, deploy releases, or operate production systems. | 依据已确认设计安全实施后端代码、契约、配置、迁移和测试自动化"
 ---
 
 # Dev IMPL

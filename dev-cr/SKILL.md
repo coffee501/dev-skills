@@ -1,6 +1,6 @@
 ---
 name: dev-cr
-description: Independently review backend-service and system-integration implementations, pull requests, commits, patches, contracts, configuration, migrations, jobs, events, and test automation against approved requirements, HLD/LLD, repository rules, and current implementation evidence. Use for implementation review, PR or change-set review, pre-merge risk assessment, review-result import, remediation re-review, or G4 review evidence. Produce traceable REV findings and verdicts without modifying code by default. Do not invent requirements or design, approve external pull requests, waive validation, execute tests as formal evidence, deploy changes, or operate production systems.
+description: "Independently review backend-service and system-integration implementations, pull requests, commits, patches, contracts, configuration, migrations, jobs, events, and test automation against approved requirements, HLD/LLD, repository rules, and current implementation evidence. Use for implementation review, PR or change-set review, pre-merge risk assessment, review-result import, remediation re-review, or G4 review evidence. Produce traceable REV findings and verdicts without modifying code by default. Do not invent requirements or design, approve external pull requests, waive validation, execute tests as formal evidence, deploy changes, or operate production systems. | 独立评审后端与集成实现，形成可追踪问题、结论和整改交接"
 ---
 
 # Dev CR

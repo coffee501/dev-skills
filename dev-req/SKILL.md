@@ -1,6 +1,6 @@
 ---
 name: dev-req
-description: Analyze, clarify, review, and iteratively refine software product or business requirements, or derive evidence-backed candidate requirements from existing implementations, legacy systems, tests, contracts, configuration, data structures, and runtime evidence. Use only when the goal is to reconstruct, document, clarify, validate, or baseline business requirements; do not use for general code comprehension, debugging, refactoring, code review, or architecture analysis. Keep architecture, detailed design, APIs, databases, implementation mechanisms, source excerpts, and full test cases outside requirement content; reverse discovery may cite concise file or symbol evidence.
+description: "Analyze, clarify, review, and iteratively refine software product or business requirements, or derive evidence-backed candidate requirements from existing implementations, legacy systems, tests, contracts, configuration, data structures, and runtime evidence. Use only when the goal is to reconstruct, document, clarify, validate, or baseline business requirements; do not use for general code comprehension, debugging, refactoring, code review, or architecture analysis. Keep architecture, detailed design, APIs, databases, implementation mechanisms, source excerpts, and full test cases outside requirement content; reverse discovery may cite concise file or symbol evidence. | 将粗略需求或已有实现整理为可追踪、可确认和可验收的需求"
 ---
 
 # Dev REQ

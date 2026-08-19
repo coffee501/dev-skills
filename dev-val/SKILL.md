@@ -1,6 +1,6 @@
 ---
 name: dev-val
-description: Execute approved backend-service and system-integration tests against identified builds and environments, preserve auditable RUN/EVD evidence, classify failures and defects, govern retries and flaky or quarantined automation, evaluate VAL/DVAL coverage, and produce a validation GATE recommendation. Use for targeted verification, regression execution, defect reproduction or retest, CI evidence review, validation-gate recalculation, and authorized performance, security, or reliability experiments. Do not design test expectations, fix code, approve releases, deploy changes, or operate production systems.
+description: "Execute approved backend-service and system-integration tests against identified builds and environments, preserve auditable RUN/EVD evidence, classify failures and defects, govern retries and flaky or quarantined automation, evaluate VAL/DVAL coverage, and produce a validation GATE recommendation. Use for targeted verification, regression execution, defect reproduction or retest, CI evidence review, validation-gate recalculation, and authorized performance, security, or reliability experiments. Do not design test expectations, fix code, approve releases, deploy changes, or operate production systems. | 执行后端与集成测试并治理验证证据、失败分类和质量门禁"
 ---
 
 # Dev VAL

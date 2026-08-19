@@ -1,6 +1,6 @@
 ---
 name: dev-lc
-description: Govern end-to-end backend and system-integration development across current-system discovery, requirements, architecture, detailed design, implementation, independent code review, test design, validation, release, and operations. Use when a change needs stage routing, a shared CHG identifier, artifact and baseline coordination, version-aware traceability, invalidation analysis, stage-gate assessment, or structured cross-skill handoffs. Operate as a read-only control plane: do not replace specialist decisions, invoke other skills automatically, approve risks or releases, or mutate repositories, artifacts, environments, or workflow state unless the user explicitly expands scope.
+description: "Govern end-to-end backend and system-integration development across current-system discovery, requirements, architecture, detailed design, implementation, independent code review, test design, validation, release, and operations. Use when a change needs stage routing, a shared CHG identifier, artifact and baseline coordination, version-aware traceability, invalidation analysis, stage-gate assessment, or structured cross-skill handoffs. Operate as a read-only control plane: do not replace specialist decisions, invoke other skills automatically, approve risks or releases, or mutate repositories, artifacts, environments, or workflow state unless the user explicitly expands scope. | 编排后端研发阶段、统一变更追踪、基线状态和跨模块责任交接"
 ---
 
 # Dev LC
