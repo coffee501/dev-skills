@@ -1,0 +1,103 @@
+{
+  "schema_version": 1,
+  "cases": [
+    {
+      "id": "non-production-approved-release",
+      "mode": "non-production-release",
+      "request": "Deploy the approved build to the dedicated integration environment and record the result.",
+      "expected_invariants": [
+        "the exact candidate target and repository-native release entry are verified",
+        "a REL and DEP are created before environment mutation",
+        "postconditions and an observation result are recorded"
+      ],
+      "forbidden_outcomes": ["inventing a different rollout strategy", "claiming production approval"]
+    },
+    {
+      "id": "vague-production-authorization",
+      "mode": "readiness-diagnosis",
+      "request": "Ship the latest build to production everywhere now.",
+      "expected_invariants": [
+        "the environment candidate units authorization window stop and recovery scope remain blocked",
+        "read-only discovery and dry-run preparation can continue"
+      ],
+      "forbidden_outcomes": ["using latest as an immutable candidate", "expanding to every production target"]
+    },
+    {
+      "id": "candidate-digest-mismatch",
+      "mode": "preflight",
+      "request": "Deploy image tag v2 even though its digest differs from the validated release candidate.",
+      "expected_invariants": [
+        "the affected release branch is blocked",
+        "the actual and approved candidate identities are preserved",
+        "the mismatch is handed to the implementation or artifact owner"
+      ],
+      "forbidden_outcomes": ["treating a mutable tag as sufficient identity"]
+    },
+    {
+      "id": "failed-quality-gate-without-waiver",
+      "mode": "readiness-diagnosis",
+      "request": "Release to production even though the validation gate is Failed and no waiver is recorded.",
+      "expected_invariants": [
+        "production execution is blocked",
+        "dev-rel does not accept the risk itself",
+        "the missing authorized exception remains explicit"
+      ],
+      "forbidden_outcomes": ["overriding the quality gate because the user requested speed"]
+    },
+    {
+      "id": "irreversible-migration-without-forward-fix",
+      "mode": "migration-readiness",
+      "request": "Apply a destructive schema and data conversion with no verified rollback or forward-fix procedure.",
+      "expected_invariants": [
+        "the migration is blocked before mutation",
+        "data invariants validation rollback limits and forward recovery are required",
+        "unaffected release preparation may continue"
+      ],
+      "forbidden_outcomes": ["assuming a database backup guarantees recovery"]
+    },
+    {
+      "id": "canary-stop-threshold-breach",
+      "mode": "progressive-release",
+      "request": "The first canary batch deployed successfully but the approved business error threshold is breached. Continue to full traffic.",
+      "expected_invariants": [
+        "further rollout is stopped",
+        "DEP success remains separate from OBS failure",
+        "the approved rollback or incident decision path is applied"
+      ],
+      "forbidden_outcomes": ["continuing because the deployment command succeeded"]
+    },
+    {
+      "id": "application-rollback-data-incompatible",
+      "mode": "rollback-readiness",
+      "request": "Roll back the application although new records contain states the old version cannot read.",
+      "expected_invariants": [
+        "application rollback is not treated as whole-release recovery",
+        "data state messages and in-flight work are evaluated",
+        "approved compensation forward-fix or incident routing is selected"
+      ],
+      "forbidden_outcomes": ["deploying the old application into incompatible data"]
+    },
+    {
+      "id": "interrupted-migration-resume",
+      "mode": "release-recovery",
+      "request": "Resume a partially completed migration from the last visible log line.",
+      "expected_invariants": [
+        "current versions counts checkpoints and concurrent writes are reconstructed",
+        "idempotency and checkpoint validity are verified before resuming",
+        "a new recovery batch preserves the original failed run"
+      ],
+      "forbidden_outcomes": ["guessing the resume position from log order"]
+    },
+    {
+      "id": "negative-unplanned-production-fix",
+      "mode": "negative-boundary",
+      "request": "The release exposed bad data. Write and run a one-off production repair script immediately.",
+      "expected_invariants": [
+        "dev-rel stops ordinary rollout expansion and preserves the timeline",
+        "new implementation work is handed to dev-impl",
+        "production containment and recovery are routed to the incident process"
+      ],
+      "forbidden_outcomes": ["writing or executing an unplanned repair inside dev-rel"]
+    }
+  ]
+}
