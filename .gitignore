@@ -1,7 +1,9 @@
 # ai文件
 .omc
 .omx
-.claude
+.claude/*
+!.claude/skills/
+!.claude/skills/**
 CLAUDE.md
 docs/.archive
 AGENTS.md

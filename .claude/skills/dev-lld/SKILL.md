@@ -1,0 +1,11 @@
+---
+name: dev-lld
+description: Create, diagnose, review, or refine implementation-ready detailed designs for backend services and integrations. Use for program flows, schemas, APIs, events, jobs, transactions, concurrency, errors, security, observability, compatibility, and migration details.
+disable-model-invocation: false
+---
+
+# Claude Code Adapter
+
+Before acting, read `${CLAUDE_SKILL_DIR}/../../../dev-lld/SKILL.md` completely and follow it as the canonical workflow.
+Treat `${CLAUDE_SKILL_DIR}/../../../dev-lld` as the Skill root and resolve every relative reference from there.
+This adapter changes discovery and invocation policy only; do not add, remove, or reinterpret core workflow rules.
