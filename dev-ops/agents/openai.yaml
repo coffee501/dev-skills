@@ -2,5 +2,12 @@ interface:
   display_name: "OPS 运行与事故"
   short_description: "治理运行准备、生产事故响应、恢复验证及RCA/CAPA闭环"
   default_prompt: "Use $dev-ops to assess operational readiness or handle a backend/integration incident safely."
+  icon_small: "./assets/icon.svg"
+  icon_large: "./assets/icon.svg"
 policy:
+  products:
+  - chatgpt
+  - codex
+  - api
+  - atlas
   allow_implicit_invocation: false

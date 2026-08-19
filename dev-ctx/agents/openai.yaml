@@ -2,5 +2,12 @@ interface:
   display_name: "CTX 实现理解"
   short_description: "从代码与工程证据建立可供后续研发复用的现有实现上下文"
   default_prompt: "使用 $dev-ctx 理解当前项目实现；按需要输出临时视图或可版本化复用的As-Is上下文。"
+  icon_small: "./assets/icon.svg"
+  icon_large: "./assets/icon.svg"
 policy:
+  products:
+  - chatgpt
+  - codex
+  - api
+  - atlas
   allow_implicit_invocation: false

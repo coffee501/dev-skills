@@ -2,5 +2,12 @@ interface:
   display_name: "CR 代码评审"
   short_description: "独立评审后端与集成实现，形成可追踪问题、结论和整改交接"
   default_prompt: "Use $dev-cr to independently review a backend or integration implementation and produce a traceable review verdict."
+  icon_small: "./assets/icon.svg"
+  icon_large: "./assets/icon.svg"
 policy:
+  products:
+  - chatgpt
+  - codex
+  - api
+  - atlas
   allow_implicit_invocation: true

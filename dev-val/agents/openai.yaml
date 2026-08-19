@@ -2,5 +2,12 @@ interface:
   display_name: "VAL 验证执行"
   short_description: "执行后端与集成测试并治理验证证据、失败分类和质量门禁"
   default_prompt: "Use $dev-val to run the approved validation scope, preserve auditable evidence, classify failures, and evaluate the validation gate."
+  icon_small: "./assets/icon.svg"
+  icon_large: "./assets/icon.svg"
 policy:
+  products:
+  - chatgpt
+  - codex
+  - api
+  - atlas
   allow_implicit_invocation: false
