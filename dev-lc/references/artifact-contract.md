@@ -4,7 +4,7 @@
 
 让所有 `dev-*` Skill 以相同方式标识变更、版本、来源、适用范围、风险和证据。专业 Skill 负责内容，`dev-lc` 只汇总元数据和关系。
 
-当前协议版本为 `DEV-SUITE-5.0`。新增向后兼容字段时增加次版本；删除字段、改变含义、状态语义或 Skill 标识时增加主版本，并对存量产物提供迁移和兼容说明。
+当前协议版本为 `DEV-SUITE-7.0`。新增向后兼容字段时增加次版本；删除字段、改变含义、状态语义或 Skill 标识时增加主版本，并对存量产物提供迁移和兼容说明。
 
 ## Skill 缩写
 
@@ -15,6 +15,7 @@
 | `dev-hld` | High-Level Design | `dev-overview` |
 | `dev-lld` | Low-Level Design | `dev-details` |
 | `dev-impl` | Implementation | `dev-implementation` |
+| `dev-cr` | Code Review | 新增 |
 | `dev-test` | Test Design | `dev-test-cases` |
 | `dev-val` | Validation | `dev-validation` |
 | `dev-rel` | Release | `dev-release` |
@@ -34,6 +35,15 @@
 `CTX/CTXF/CTXP/CTXG`、`Draft → Ready → PotentiallyStale → Ready / Stale → Superseded` 上下文状态和独立项目
 基线。4.0及更早生成的项目说明继续作为普通来源文档，不自动升级为
 `Ready CTX`；只有补齐范围、版本、证据、新鲜度和失效条件后才能迁入5.0。
+
+`DEV-SUITE-6.0` 将 `CTXF/CTXP/CTXG` 明确为可独立版本化和失效的正式子制品，引入 `Eligible CTX` 聚合判定、
+`CTXG Open/Resolved/Superseded` 生命周期和标准失效 `HOF`。5.0 的 `Unknown/Conflicted CTXF` 迁移为 `CTXG`，并保留
+原事实、来源和版本作为迁移证据；缺少子制品版本或父 `CTX` 的5.0上下文在补齐前不得直接标记为 `Eligible CTX`。
+
+`DEV-SUITE-7.0` 将代码评审纳入正式生命周期，引入 `dev-cr` 和 `REV`；为 `CHG/HOF/LCV` 补充机器可校验契约；
+将正式产物的 `sources/applies_to/risks/evidence` 统一为必需字段；补齐 `MIGRUN/RUNBOOK` 追踪节点，并正式定义
+发布、运行手册、事故、RCA和CAPA状态。6.0产物继续按原版本解释；迁入7.0时补齐公共信封和新状态依据，无法补证的
+字段标记未知，不反推历史评审、授权或完成结论。
 
 ## CHG 规则
 
@@ -56,11 +66,11 @@
 | `version` | 产物版本或不可变摘要 |
 | `status` | 使用产物类型自己的状态，不使用笼统“完成” |
 | `owner` | 内容责任角色；未知时明确待确认 |
-| `sources` | 上游编号及版本，不只记录文件名 |
+| `sources` | 上游编号及版本或已检查来源清单，不只记录无版本文件名 |
 | `applies_to` | 适用代码、契约、数据、环境或发布版本 |
 | `supersedes` | 被替代产物及版本；没有则省略 |
 | `risks` | 未决风险、接受信息和失效条件 |
-| `evidence` | 支撑当前结论的证据编号 |
+| `evidence` | 支撑当前结论的证据编号或可复核定位器 |
 | `updated_at` | 明确时间和时区 |
 
 未知字段保留为待确认，不虚构责任人、版本、环境或授权。
@@ -75,6 +85,7 @@
 | `dev-hld` | `DEC`、`MOD`、`FLOW`、`VAL` |
 | `dev-lld` | `DET`、`DDEC`、`DATA`、`MIG`、`API`、`EVT`、`JOB`、`CFG`、`DVAL` |
 | `dev-impl` | `IMP`、`BUILD`，以及自动化代码的实现证据 |
+| `dev-cr` | `REV` |
 | `dev-test` | `TSC`、`TC`、`TDP`、`TD`、`TENV`、`TCOND`、`AUT` 规格 |
 | `dev-val` | `RUN`、`EVD`、`DEFECT`、`GATE`，以及自动化门禁状态确认 |
 | `dev-rel` | `REL`、`DEP`、`MIGRUN`、`OBS` |
@@ -87,14 +98,20 @@
 
 按适用范围维护：
 
-> `CHG → REQ/RULE/AC → DEC/MOD/FLOW → DET/DDEC → { IMP/BUILD；TSC/TC/AUT } → RUN/EVD/GATE → REL/DEP/OBS → INC/RCA/CAPA`
+> `CHG → REQ/RULE/AC → DEC/MOD/FLOW → DET/DDEC → { IMP/BUILD → REV；TSC/TC/AUT } → RUN/EVD/GATE → REL/DEP/MIGRUN/OBS → RUNBOOK → { INC/RCA/CAPA，按事故适用 }`
 
 花括号表示实现与测试设计可以并行推进，不表示串行先后。自动化实现单独建立
-`TC → AUT → IMP(kind=test-automation) → BUILD → RUN/EVD`。允许跳过不适用节点，但必须说明原因。
+`TC → AUT → IMP(kind=test-automation) → BUILD → REV → RUN/EVD`。低风险自动化变更可以按项目评审政策将 `REV` 标记为
+不适用，但必须记录依据。允许跳过其他不适用节点，但必须说明原因；健康发布不要求创建 `INC/RCA/CAPA`。
 
 `CTX/CTXF/CTXP/CTXG` 是可被任意适用阶段引用的As-Is证据侧输入，不属于强制串行门，也不替代
 `REQ/DEC/DET/IMP/TC`。`CTXG` 传递未知、冲突和证据边界，不得被下游当作已确认事实。
 特定变更调查关联 `CHG`；独立项目基线使用 `change: none` 并通过 `applies_to` 绑定版本和范围。
+
+`CTXF/CTXP/CTXG` 均使用统一产物信封，通过 `parent_ctx` 关联父包，并使用各自的独立 `id + version` 被引用。下游只把
+满足 `Ready`、适用范围匹配、消费者最小充分性、所需子制品 `Ready + Current` 且无命中当前分支的开放阻塞 `CTXG`
+的上下文视为 `Eligible CTX`。具体字段见 [CTX上下文包](../../dev-ctx/references/context-package.md) 和
+[CTX子制品契约](../../dev-ctx/references/context-artifacts.md)，其他模块不得自行放宽。
 
 ## 版本与证据
 

@@ -1,6 +1,6 @@
 ---
 name: dev-lc
-description: Govern end-to-end backend and system-integration development across current-system discovery, requirements, architecture, detailed design, implementation, test design, validation, release, and operations. Use when a change needs stage routing, a shared CHG identifier, artifact and baseline coordination, version-aware traceability, invalidation analysis, stage-gate assessment, or structured cross-skill handoffs. Operate as a read-only control plane: do not replace specialist decisions, invoke other skills automatically, approve risks or releases, or mutate repositories, artifacts, environments, or workflow state unless the user explicitly expands scope.
+description: Govern end-to-end backend and system-integration development across current-system discovery, requirements, architecture, detailed design, implementation, independent code review, test design, validation, release, and operations. Use when a change needs stage routing, a shared CHG identifier, artifact and baseline coordination, version-aware traceability, invalidation analysis, stage-gate assessment, or structured cross-skill handoffs. Operate as a read-only control plane: do not replace specialist decisions, invoke other skills automatically, approve risks or releases, or mutate repositories, artifacts, environments, or workflow state unless the user explicitly expands scope.
 ---
 
 # Dev LC
@@ -21,6 +21,8 @@ description: Govern end-to-end backend and system-integration development across
 - 判断对象状态、阶段门和确认级别时，读取 [references/lifecycle-state-model.md](references/lifecycle-state-model.md)。
 - 创建阶段推进、问题返回或责任转移时，读取 [references/handoff-contract.md](references/handoff-contract.md)。
 - 上游、实现、测试、环境、发布或事故发生变化时，读取 [references/invalidation-rules.md](references/invalidation-rules.md)。
+- 创建或校验 `CHG/HOF/LCV` 时，读取 [references/output-contracts.md](references/output-contracts.md)。
+- 维护 Codex、Claude Code 或其他 Agent Skills 客户端的发现和触发适配时，读取 [references/tool-compatibility.md](references/tool-compatibility.md)。
 
 ## 建立 CHG 上下文
 
@@ -37,6 +39,7 @@ description: Govern end-to-end backend and system-integration development across
 | `dev-hld` | 系统边界、模块职责和概要决策 |
 | `dev-lld` | 实现级详细设计、契约和迁移方案 |
 | `dev-impl` | 代码、配置、契约和迁移实施 |
+| `dev-cr` | 独立代码评审、问题分级、结论和整改复审 |
 | `dev-test` | 测试场景、用例、数据和自动化设计 |
 | `dev-val` | 测试执行、证据、失败分类和门禁建议 |
 | `dev-rel` | 发布、迁移执行、观察和回滚 |
@@ -55,6 +58,9 @@ description: Govern end-to-end backend and system-integration development across
 6. 按阶段门分别输出评估结果和确认级别。
 7. 对阶段推进、问题返回和失效通知创建标准 `HOF`。
 8. 输出当前状态、阻塞、风险、下一责任模块和重新评审条件。
+
+使用 `scripts/validate_lifecycle_artifact.py` 校验JSON形式的 `CHG/HOF/LCV`，使用 `scripts/validate_suite.py` 检查整套
+Skill的元数据、链接、共享契约和端到端行为用例。校验器不替代内容评审、权限确认或实际阶段推进。
 
 ## 管理阶段门
 

@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "cases": [
+    {
+      "id": "brownfield-feature-change",
+      "route": ["dev-ctx", "dev-req", "dev-hld", "dev-lld", "dev-test", "dev-impl", "dev-cr", "dev-val", "dev-rel", "dev-ops"],
+      "required_artifacts": ["CTX", "REQ", "AC", "DEC", "DET", "TC", "IMP", "BUILD", "REV", "RUN", "EVD", "GATE", "REL", "DEP", "OBS", "RUNBOOK"],
+      "invariants": ["As-Is does not become To-Be without confirmation", "implementation and test design can progress in parallel", "REV Approved precedes formal G5 Pass"]
+    },
+    {
+      "id": "low-risk-defect-fix",
+      "route": ["dev-impl", "dev-cr", "dev-val"],
+      "required_artifacts": ["IMP", "BUILD", "REV", "RUN", "EVD"],
+      "invariants": ["valid existing requirements and design may be reused", "local BUILD is not formal EVD"]
+    },
+    {
+      "id": "high-risk-data-migration",
+      "route": ["dev-req", "dev-hld", "dev-lld", "dev-test", "dev-impl", "dev-cr", "dev-val", "dev-rel", "dev-ops"],
+      "required_artifacts": ["MIG", "DVAL", "TC", "IMP", "BUILD", "REV", "EVD", "GATE", "MIGRUN", "OBS", "RUNBOOK"],
+      "invariants": ["migration implementation is separate from migration execution", "irreversible change requires forward recovery and validation"]
+    },
+    {
+      "id": "test-automation-loop",
+      "route": ["dev-test", "dev-impl", "dev-cr", "dev-val"],
+      "required_artifacts": ["TC", "AUT", "IMP", "BUILD", "REV", "RUN", "EVD"],
+      "invariants": ["AUT specification and automation code have separate ownership", "review can be N/A only under explicit project policy"]
+    },
+    {
+      "id": "healthy-release-to-operations",
+      "route": ["dev-rel", "dev-ops"],
+      "required_artifacts": ["REL", "DEP", "OBS", "RUNBOOK"],
+      "invariants": ["healthy release does not create an incident", "release completion does not prove long-term stability"]
+    },
+    {
+      "id": "incident-feedback-loop",
+      "route": ["dev-ops", "dev-req", "dev-hld", "dev-lld", "dev-test", "dev-impl", "dev-cr", "dev-val", "dev-rel"],
+      "required_artifacts": ["INC", "RCA", "CAPA", "IMP", "REV", "EVD", "REL"],
+      "invariants": ["recovery is not incident closure", "RCA and CAPA invalidate affected upstream and downstream artifacts"]
+    },
+    {
+      "id": "handoff-rejection-and-rework",
+      "route": ["dev-lc", "dev-lld", "dev-req", "dev-lld"],
+      "required_artifacts": ["CHG", "HOF", "LCV"],
+      "invariants": ["Prepared does not imply Accepted", "Rejected handoff preserves reason and successor relationship"]
+    },
+    {
+      "id": "standalone-skill-use",
+      "route": ["dev-test"],
+      "required_artifacts": [],
+      "invariants": ["local identifiers do not claim global uniqueness", "formal GATE and HOF remain unconfirmed"]
+    }
+  ]
+}
+
