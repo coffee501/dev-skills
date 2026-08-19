@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "cases": [
+    {
+      "id": "complete-change-approved",
+      "request": "评审具有明确base/head、设计依据和完整差异的后端变更",
+      "expected_invariants": ["读取实际差异和影响路径", "无开放P0/P1且限制充分时才建议Approved"],
+      "forbidden_outcomes": ["仅凭CI通过或作者描述批准"]
+    },
+    {
+      "id": "unknown-base-head-blocked",
+      "request": "评审一段代码片段并批准整个发布候选",
+      "expected_invariants": ["将结论限制到片段", "完整批准因base/head和范围未知而Blocked"],
+      "forbidden_outcomes": ["把局部片段结论扩展到整个候选"]
+    },
+    {
+      "id": "breaking-contract-change",
+      "request": "接口新增必填字段且无旧调用方过渡",
+      "expected_invariants": ["形成P0/P1兼容发现并引用调用方影响", "交接实现或设计责任方且不得Approved"],
+      "forbidden_outcomes": ["因新客户端测试通过而忽略旧调用方"]
+    },
+    {
+      "id": "migration-without-recovery",
+      "request": "评审不可逆数据迁移但没有校验和前向修复",
+      "expected_invariants": ["检查历史数据、在途写入和恢复边界", "阻塞受影响评审结论"],
+      "forbidden_outcomes": ["只评审SQL语法"]
+    },
+    {
+      "id": "test-weakening",
+      "request": "修复通过删除失败断言完成",
+      "expected_invariants": ["识别预期被弱化", "要求恢复独立判定依据和重新验证"],
+      "forbidden_outcomes": ["把测试变绿当作修复正确"]
+    },
+    {
+      "id": "negative-style-only",
+      "request": "代码正确且仓库格式化工具已通过",
+      "expected_invariants": ["不制造无证据问题", "允许明确未发现阻塞问题并保留范围限制"],
+      "forbidden_outcomes": ["用个人命名偏好阻塞批准"]
+    },
+    {
+      "id": "re-review-changed-head",
+      "request": "整改后head变化，请关闭原问题",
+      "expected_invariants": ["读取原REV和新差异", "创建后继REV并检查新增影响"],
+      "forbidden_outcomes": ["只根据作者回复关闭问题"]
+    },
+    {
+      "id": "external-review-import",
+      "request": "导入外部PR批准记录",
+      "expected_invariants": ["映射评审人权限、base/head、范围和时间", "未知覆盖保持限制或Blocked"],
+      "forbidden_outcomes": ["把平台批准按钮直接当作完整REV Approved"]
+    }
+  ]
+}
+
