@@ -23,6 +23,8 @@
 | `REQ/RULE/AC` | `DEC/MOD/FLOW`、`DET/DDEC`、`IMP`、`TSC/TC`、`EVD/GATE`、发布范围 |
 | `DEC/MOD/FLOW` | `DET/DDEC`、实现、跨模块测试、发布和运行手册 |
 | `DATA/API/EVT/JOB/CFG` | 实现、迁移、调用方、消费者、契约测试和兼容测试 |
+| `API/EVT/OpenAPI/AsyncAPI/Proto/SDL` | 相关 `FIA`、前端消费场景、联调检查、兼容说明和引用该语义的测试/证据 |
+| `FIA` 消费语义、范围或版本 | 前端对接实现、联调清单、消费侧测试预期和相关验证证据 |
 | `DDEC` | `IMP`、相关 `AUT`、`DVAL` 和执行证据 |
 | 代码、依赖或配置 | `BUILD`、`REV`、相关测试证据、质量门禁和发布产物 |
 | `REV` 结论或评审范围 | `IMP Reviewed/Integrated`、验证范围、质量门禁和发布就绪 |

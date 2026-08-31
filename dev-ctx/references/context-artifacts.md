@@ -24,7 +24,7 @@
 ## CTXF 实现事实
 
 ```yaml
-protocol_version: DEV-SUITE-7.0
+protocol_version: DEV-SUITE-7.1
 id: CTXF-001
 type: implementation-context-fact
 change: none | CHG-001
@@ -52,7 +52,7 @@ updated_at: YYYY-MM-DDThh:mm:ss+08:00
 ## CTXP 实现路径
 
 ```yaml
-protocol_version: DEV-SUITE-7.0
+protocol_version: DEV-SUITE-7.1
 id: CTXP-001
 type: implementation-context-path
 change: none | CHG-001
@@ -87,7 +87,7 @@ updated_at: YYYY-MM-DDThh:mm:ss+08:00
 ## CTXG 上下文缺口
 
 ```yaml
-protocol_version: DEV-SUITE-7.0
+protocol_version: DEV-SUITE-7.1
 id: CTXG-001
 type: implementation-context-gap
 change: none | CHG-001

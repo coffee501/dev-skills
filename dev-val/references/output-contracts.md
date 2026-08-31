@@ -17,7 +17,7 @@
 ## RUN
 
 ```yaml
-protocol_version: DEV-SUITE-7.0
+protocol_version: DEV-SUITE-7.1
 id: RUN-001
 type: validation-run
 change: CHG-PENDING-001
@@ -40,7 +40,7 @@ updated_at: 2026-01-01T00:00:00+08:00
 ## EVD
 
 ```yaml
-protocol_version: DEV-SUITE-7.0
+protocol_version: DEV-SUITE-7.1
 id: EVD-001
 type: validation-evidence
 change: CHG-PENDING-001
@@ -65,7 +65,7 @@ updated_at: 2026-01-01T00:00:00+08:00
 ## DEFECT
 
 ```yaml
-protocol_version: DEV-SUITE-7.0
+protocol_version: DEV-SUITE-7.1
 id: DEFECT-001
 type: validation-defect
 change: CHG-PENDING-001
@@ -92,7 +92,7 @@ updated_at: 2026-01-01T00:00:00+08:00
 ## GATE
 
 ```yaml
-protocol_version: DEV-SUITE-7.0
+protocol_version: DEV-SUITE-7.1
 id: GATE-001
 type: validation-gate
 change: CHG-PENDING-001

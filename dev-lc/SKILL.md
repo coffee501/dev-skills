@@ -1,6 +1,6 @@
 ---
 name: dev-lc
-description: "Govern end-to-end backend and system-integration development across current-system discovery, requirements, architecture, detailed design, implementation, independent code review, test design, validation, release, and operations. Use when a change needs stage routing, a shared CHG identifier, artifact and baseline coordination, version-aware traceability, invalidation analysis, stage-gate assessment, or structured cross-skill handoffs. Operate as a read-only control plane: do not replace specialist decisions, invoke other skills automatically, approve risks or releases, or mutate repositories, artifacts, environments, or workflow state unless the user explicitly expands scope. | 编排后端研发阶段、统一变更追踪、基线状态和跨模块责任交接"
+description: "Govern end-to-end backend and system-integration development across current-system discovery, requirements, architecture, detailed design, frontend interface alignment, implementation, independent code review, test design, validation, release, and operations. Use when a change needs stage routing, a shared CHG identifier, artifact and baseline coordination, version-aware traceability, invalidation analysis, stage-gate assessment, or structured cross-skill handoffs. Operate as a read-only control plane: do not replace specialist decisions, invoke other skills automatically, approve risks or releases, or mutate repositories, artifacts, environments, or workflow state unless the user explicitly expands scope. | 编排后端研发阶段、统一变更追踪、基线状态和跨模块责任交接"
 ---
 
 # Dev LC
@@ -23,6 +23,8 @@ description: "Govern end-to-end backend and system-integration development acros
 - 上游、实现、测试、环境、发布或事故发生变化时，读取 [references/invalidation-rules.md](references/invalidation-rules.md)。
 - 创建或校验 `CHG/HOF/LCV` 时，读取 [references/output-contracts.md](references/output-contracts.md)。
 - 维护 Codex、Claude Code 或其他 Agent Skills 客户端的发现和触发适配时，读取 [references/tool-compatibility.md](references/tool-compatibility.md)。
+- 使用调度 Agent、安排多阶段并行工作或从中断状态恢复时，读取 [references/orchestration-protocol.md](references/orchestration-protocol.md)。
+- 保存或读取调度中间状态、工作项和晋升记录时，读取 [references/external-state-contract.md](references/external-state-contract.md)。
 
 ## 建立 CHG 上下文
 
@@ -38,6 +40,7 @@ description: "Govern end-to-end backend and system-integration development acros
 | `dev-req` | 需求、规则、业务语义和验收基线 |
 | `dev-hld` | 系统边界、模块职责和概要决策 |
 | `dev-lld` | 实现级详细设计、契约和迁移方案 |
+| `dev-fia` | 将后端接口、事件和机器契约转为前端消费与联调文档 |
 | `dev-impl` | 代码、配置、契约和迁移实施 |
 | `dev-cr` | 独立代码评审、问题分级、结论和整改复审 |
 | `dev-test` | 测试场景、用例、数据和自动化设计 |
@@ -47,6 +50,11 @@ description: "Govern end-to-end backend and system-integration development acros
 
 不要机械要求全部阶段串行出现。`dev-ctx` 是存量系统或上下文未知时的按需发现阶段，不是新项目的强制门；测试设计
 可以从需求阶段开始；局部缺陷可以复用有效需求和设计基线；生产事故可以直接进入运行止损，再补充永久修复链。
+存在前端消费方时，`dev-fia` 在适用的字段级契约形成后按需加入路线，不作为新的串行阶段门；它不生成前端代码，
+也不替代 `dev-lld`、`dev-test` 或 `dev-val`。
+
+跨越三个以上专业阶段、需要并行协调、迁移或事故闭环时，可以显式使用 `dev-orch` Skill/Agent 按调度协议协调。单阶段或简单双阶段
+请求直接使用专业 Skill，避免引入不必要的控制面。
 
 ## 执行治理流程
 

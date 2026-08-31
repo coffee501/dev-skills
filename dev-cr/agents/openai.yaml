@@ -1,6 +1,6 @@
 interface:
   display_name: "CR 代码评审"
-  short_description: "Independent code review of backend services and integrations, producing traceable findings, verdicts, and remediation handoffs | 独立评审后端与集成实现，形成可追踪问题、结论和整改交接"
+  short_description: "Review backend changes and produce traceable findings"
   default_prompt: "Use $dev-cr to independently review a backend or integration implementation and produce a traceable review verdict."
   icon_small: "./assets/icon.svg"
   icon_large: "./assets/icon.svg"

@@ -48,7 +48,12 @@
       "route": ["dev-test"],
       "required_artifacts": [],
       "invariants": ["local identifiers do not claim global uniqueness", "formal GATE and HOF remain unconfirmed"]
+    },
+    {
+      "id": "frontend-interface-alignment",
+      "route": ["dev-ctx", "dev-lld", "dev-fia", "dev-test", "dev-val"],
+      "required_artifacts": ["API", "FIA", "TC", "EVD"],
+      "invariants": ["OpenAPI is a contract foundation and FIA is the final frontend handoff", "dev-fia does not generate frontend code", "semantic gaps return to their authoritative owner"]
     }
   ]
 }
-

@@ -2,7 +2,7 @@
 
 ## 通用信封
 
-`CHG/HOF/LCV` 使用 `DEV-SUITE-7.0` 统一信封：`protocol_version`、`id`、`type`、`change`、`version`、
+新建 `CHG/HOF/LCV` 使用 `DEV-SUITE-7.1` 统一信封，7.0存量产物继续兼容：`protocol_version`、`id`、`type`、`change`、`version`、
 `status`、`owner`、`sources`、`applies_to`、`risks`、`evidence`、`updated_at`。`supersedes`按需提供。
 
 ## CHG

@@ -15,6 +15,7 @@ COMMON = {
     "protocol_version", "id", "type", "change", "version", "status", "owner",
     "sources", "applies_to", "risks", "evidence", "updated_at",
 }
+SUPPORTED_PROTOCOLS = {"DEV-SUITE-7.0", "DEV-SUITE-7.1"}
 RULES = {
     "operations-runbook": {
         "prefix": "RUNBOOK-",
@@ -83,8 +84,8 @@ def validate_artifact(document: Any) -> list[str]:
     artifact_id = document.get("id")
     if not isinstance(artifact_id, str) or not re.fullmatch(re.escape(rule["prefix"]) + r"(?:PENDING-)?[A-Za-z0-9][A-Za-z0-9._-]*", artifact_id):
         errors.append(f"id must start with {rule['prefix']} and contain a suffix")
-    if document.get("protocol_version") != "DEV-SUITE-7.0":
-        errors.append("protocol_version must be DEV-SUITE-7.0")
+    if document.get("protocol_version") not in SUPPORTED_PROTOCOLS:
+        errors.append("protocol_version must be one of: DEV-SUITE-7.0, DEV-SUITE-7.1")
     if document.get("status") not in rule["statuses"]:
         errors.append("invalid status; expected one of: " + ", ".join(sorted(rule["statuses"])))
     if not _timestamp(document.get("updated_at")):

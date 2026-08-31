@@ -1,6 +1,6 @@
 interface:
   display_name: "LC 生命周期治理"
-  short_description: "Orchestrate backend development stages, unifying change tracking, baseline state, and cross-module handoffs | 编排后端研发阶段、统一变更追踪、基线状态和跨模块责任交接"
+  short_description: "Coordinate lifecycle routing, gates, and handoffs"
   default_prompt: "Use $dev-lc to route and govern an end-to-end backend change."
   icon_small: "./assets/icon.svg"
   icon_large: "./assets/icon.svg"
@@ -16,7 +16,8 @@ policy:
 # OpenAI Agent Spec does not yet standardise a sub-agents field; this block
 # is informational and consumed by the lifecycle governance policy itself.
 orchestration:
-  role: orchestrator
+  role: lifecycle-control
+  coordinator_skill: dev-orch
   stage_routing: true
   invalidation_authority: true
   downstream:
@@ -36,6 +37,10 @@ orchestration:
       stage: detailed-design
       role: producer
       artifact: LLD/DDEC
+    - skill: dev-fia
+      stage: frontend-integration-alignment
+      role: producer
+      artifact: FIA
     - skill: dev-impl
       stage: implementation
       role: producer

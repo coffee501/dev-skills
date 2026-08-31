@@ -1,6 +1,6 @@
 interface:
   display_name: "IMPL 研发实现"
-  short_description: "Safely implement backend code, contracts, configuration, migrations, and test automation from approved designs | 依据已确认设计安全实施后端代码、契约、配置、迁移和测试自动化"
+  short_description: "Implement approved backend and integration designs safely"
   default_prompt: "使用 $dev-impl 按已确认设计实施后端或系统集成变更，并生成IMP、BUILD和验证交接。"
   icon_small: "./assets/icon.svg"
   icon_large: "./assets/icon.svg"

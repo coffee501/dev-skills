@@ -39,7 +39,7 @@ description: "Create, diagnose, review, and refine risk-driven, traceable test d
 
 1. 已确认的 `REQ/RULE/AC`
 2. `DEC/MOD/FLOW/VAL` 和 `DET/DDEC/DVAL`
-3. `DATA/MIG/API/EVT/JOB/CFG` 及机器可读契约
+3. `DATA/MIG/API/EVT/JOB/CFG` 及机器可读契约；存在前端消费场景时按需引用有效 `FIA`
 4. 符合共享资格规则的 `Eligible CTX` 及其引用的 `CTXF/CTXP/CTXG`
 5. 当前代码、现有测试、数据库、配置、部署和运行证据
 6. 历史缺陷、事故、变更记录和当前对话结论
@@ -133,7 +133,10 @@ P0/P1/P2 只用于问题严重度，不用于测试优先级。测试场景和�
 
 存在完整开发链时保留：
 
-> `REQ/RULE → AC → DEC/MOD/FLOW → DET/DDEC → DATA/MIG/API/EVT/JOB/CFG → VAL/DVAL → TSC/TC`
+> `REQ/RULE → AC → DEC/MOD/FLOW → DET/DDEC → DATA/MIG/API/EVT/JOB/CFG → { FIA（按消费场景）；VAL/DVAL } → TSC/TC`
+
+`FIA` 可以提供场景、字段消费、状态、错误、权限、异步和版本组合的测试输入，但不替代 `REQ/AC`、机器契约或测试预期责任。
+发现 `FIA` 与其权威来源冲突时返回相应上游；不要为了匹配对接文档而修改预期。
 
 简单任务只编号关键节点。优先复用已有编号；增量完善不得因顺序变化重新编号。记录来源版本或摘要。废止或替代编号保留，`Superseded` 必须引用后继编号，编号不得复用。不要自行重编号任何上游标识。
 

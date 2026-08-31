@@ -1,0 +1,11 @@
+interface:
+  display_name: "FIA 前端接口对接"
+  short_description: "Turn backend contracts into frontend integration guidance"
+  default_prompt: "Use $dev-fia to create a frontend integration document from backend contracts and OpenAPI."
+policy:
+  products:
+  - chatgpt
+  - codex
+  - api
+  - atlas
+  allow_implicit_invocation: true

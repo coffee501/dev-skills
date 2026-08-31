@@ -1,0 +1,11 @@
+interface:
+  display_name: "ORCH 生命周期调度"
+  short_description: "Coordinate multi-stage Dev Skills work with native agents"
+  default_prompt: "Use $dev-orch to coordinate this multi-stage backend or integration change."
+policy:
+  products:
+  - chatgpt
+  - codex
+  - api
+  - atlas
+  allow_implicit_invocation: false

@@ -1,0 +1,15 @@
+{
+  "name": "dev-skills-local",
+  "owner": {
+    "name": "Dev Skills Maintainers"
+  },
+  "description": "Backend and system-integration development lifecycle skills for Claude Code.",
+  "plugins": [
+    {
+      "name": "dev-skills",
+      "source": "./",
+      "description": "Cross-domain backend and integration lifecycle skills, including frontend interface alignment, from context discovery through operations.",
+      "version": "7.4.1"
+    }
+  ]
+}

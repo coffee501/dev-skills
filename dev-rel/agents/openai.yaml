@@ -1,6 +1,6 @@
 interface:
   display_name: "REL 发布执行"
-  short_description: "Execute controlled backend releases, governing deployment, migration, observation, rollback, and production handoff | 执行受控后端发布并治理部署、迁移、观察、回滚和生产交接"
+  short_description: "Coordinate controlled releases, migration, and rollback"
   default_prompt: "Use $dev-rel to execute the approved release scope, observe each rollout step, and stop or recover safely when conditions require it."
   icon_small: "./assets/icon.svg"
   icon_large: "./assets/icon.svg"

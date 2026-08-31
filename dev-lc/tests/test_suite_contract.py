@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 import unittest
 from pathlib import Path
 
@@ -63,6 +64,20 @@ class SuiteContractTests(unittest.TestCase):
         errors = self.lifecycle_validator.validate_artifact(handoff)
         self.assertIn("change must be a non-empty string", errors)
         self.assertIn("owner must be a non-empty string", errors)
+
+    def test_orchestrator_preserves_execution_boundaries(self) -> None:
+        document = json.loads((LC_ROOT / "tests" / "orchestration-cases.json").read_text(encoding="utf-8"))
+        cases = {case["id"]: case for case in document["cases"]}
+        self.assertEqual(cases["single-stage-direct-route"]["mode"], "direct")
+        self.assertEqual(cases["depth-limit-fallback"]["mode"], "route-only")
+        self.assertEqual(cases["external-state-unavailable"]["mode"], "route-only")
+        self.assertTrue(cases["migration-through-release"]["requires_explicit_authorization"])
+        self.assertTrue(cases["promotion-boundary"]["requires_explicit_authorization"])
+        self.assertIn("dev-fia", cases["frontend-consumer-alignment"]["route"])
+        self.assertIn(["dev-fia", "dev-test"], cases["frontend-consumer-alignment"]["parallel_groups"])
+        self.assertEqual(cases["codex-session-coordinate"]["mode"], "session-coordinate")
+        self.assertEqual(cases["codex-native-unavailable"]["mode"], "route-only")
+        self.assertIn("dev-cr", cases["codex-session-coordinate"]["route"])
 
     def test_handoff_rejects_unqualified_acceptance_timestamp(self) -> None:
         handoff = {

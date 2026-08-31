@@ -13,6 +13,7 @@
 | 实现上下文缺口 | `Open → Resolved / Superseded` |
 | 需求和设计文档 | `Draft → Reviewed → Baselined → Superseded / Deprecated` |
 | 设计决策 | `Proposed → Accepted → Validated → Superseded / Deprecated` |
+| 前端接口对接文档 | `Draft → ReadyForReview → Baselined → NeedsReview → ReadyForReview / Baselined`；任一现存状态可进入 `Superseded/Deprecated` |
 | 测试用例 | `Draft → Ready → NeedsReview → Ready / Superseded / Deprecated` |
 | 自动化规格 | `Draft → Ready → NeedsReview → Ready / Superseded / Deprecated` |
 | 实现单元主路径 | `Planned → InProgress → Implemented → Reviewed → Integrated` |
@@ -50,6 +51,9 @@
 | G7 | 运行闭环 | 生产交接、监控和处置入口存在 | `RUNBOOK/INC/RCA/CAPA` |
 
 测试设计不是独立串行门。它从G1开始建立，在G2至G4持续细化，并在G5前达到执行就绪。
+
+`FIA` 同样不是独立阶段门。存在前端消费方时，它在字段级 `API/EVT` 或机器契约足够稳定后形成，并可在实现、联调和
+测试设计期间持续细化。`FIA Baselined` 只表示对接说明获责任方确认，不表示接口实现、联调、验收或发布已经通过。
 
 G6内部保持三个独立判断：发布就绪、发布执行完成、观察窗口通过。`DEP Succeeded` 不自动表示 `MIGRUN Verified`、
 `OBS Healthy` 或 `REL Completed`；发布单只有在全部适用批次、迁移、观察和运行交接条件满足时才能完成。

@@ -11,7 +11,7 @@ description: "Create, diagnose, review, and refine implementation-ready detailed
 
 复用当前变更的 `CHG`，没有权威编号时只使用临时 `CHG-PENDING-001`。详细设计产物通过版本化信封关联 `REQ/AC/DEC/MOD/FLOW`，并保持 `DET/DDEC/DATA/MIG/API/EVT/JOB/CFG/DVAL` 编号稳定。
 
-需要产物和追踪规则时读取 [产物协议](../dev-lc/references/artifact-contract.md)；向实现和测试设计交接时读取 [交接协议](../dev-lc/references/handoff-contract.md)；设计、契约或实现事实变化时读取 [失效传播规则](../dev-lc/references/invalidation-rules.md)。`VAL/DVAL` 的非 `Planned` 状态必须由适用版本和环境中的有效执行证据支持，详细设计不得自行宣布验证通过。
+需要产物和追踪规则时读取 [产物协议](../dev-lc/references/artifact-contract.md)；向实现、前端接口对接和测试设计交接时读取 [交接协议](../dev-lc/references/handoff-contract.md)；设计、契约或实现事实变化时读取 [失效传播规则](../dev-lc/references/invalidation-rules.md)。`VAL/DVAL` 的非 `Planned` 状态必须由适用版本和环境中的有效执行证据支持，详细设计不得自行宣布验证通过。
 
 共享协议不可用时仍可独立完成详细设计诊断、设计、评审和实现任务拆分，使用本地临时标识并保留来源、适用范围、
 风险和证据；不得宣称正式G3、全局编号或标准HOF已经确认。
@@ -179,10 +179,12 @@ description: "Create, diagnose, review, and refine implementation-ready detailed
 
 - 跨模块或跨系统调用使用时序图。
 - 复杂生命周期使用状态机或状态转换表。
-- 多分支程序控制使用程序流程图或伪代码。
+- 多分支程序控制、关键算法、事务或副作用顺序、幂等与补偿、批处理续跑等实现语义仅靠正文容易产生歧义时，使用程序流程图或伪代码。
 - 复杂对象关系使用类图；普通分层不强制画类图。
 - 数据关系变化使用物理 ER 图；字段细节保留在表结构中。
 - 复杂规则优先使用决策表、公式或输入输出样例。
+
+伪代码是按需的实现契约，不是固定章节。简单 CRUD、字段映射和框架样板不生成伪代码；跨系统协作、对象生命周期和大量条件组合分别优先使用时序图、状态转换表和决策表。触发伪代码时读取 [references/implementation-unit.md](references/implementation-unit.md) 的“算法与伪代码”，保持技术中立，并明确输入输出、前置条件、关键分支、事务与状态落点、副作用、外部失败、并发幂等和结果语义。不得复制目标语言代码、过早固定普通类或方法名称，或通过伪代码补齐未确认的业务规则。
 
 同一信息只保留一个权威定义。模块章节引用 `DATA/API/EVT/CFG` 编号，不重复复制完整字段或契约。
 
@@ -195,6 +197,7 @@ description: "Create, diagnose, review, and refine implementation-ready detailed
 - 适用的外部拒绝、超时、部分成功和不可逆副作用后的业务状态与调用方结果已经由需求确认。
 - 适用的关键状态和数据变化具有合法转换、完整性约束和明确落点。
 - 适用的接口、事件和任务具有字段级契约、失败语义、兼容和治理机制。
+- 对复杂分支、关键算法、事务或副作用顺序、并发幂等、补偿恢复、批处理续跑等场景，正文或等价表达已经足以支持无歧义实现；触发伪代码且没有其他等价表达时，伪代码完整并与状态、数据、接口和异常设计一致。
 - 事务边界、竞争资源、幂等和补偿在适用场景中已经落实。
 - 适用的权限、安全、日志、监控、配置和性能设计已经完整，并具有实现位置和责任单元。
 - 对存量变更，已识别受影响代码、调用方、数据、任务和部署单元。
@@ -218,5 +221,8 @@ description: "Create, diagnose, review, and refine implementation-ready detailed
 向 `dev-impl` 提供实现单元、程序流程、数据和接口契约、异常与一致性机制、配置、迁移、发布顺序和详细变更清单；目标模块尚未启用时输出标准 `HOF`，不得把“已交接”写成“已实现”。
 
 向 `dev-test` 或等价测试设计流程提供 `REQ/RULE/AC/VAL/DVAL` 映射、状态转换、字段和接口边界、错误码、异常、并发、幂等、兼容、迁移、性能和安全验证点；不要替代其生成完整测试用例。目标 Skill 不存在时直接输出该测试设计输入包。
+
+存在前端消费方时，向 `dev-fia` 提供版本化 `API/EVT`、OpenAPI等机器契约、业务语义来源、状态与错误、权限和数据范围、
+异步最终性、兼容窗口及发布约束。`dev-fia` 负责消费侧对接文档；详细设计不生成前端代码，也不把 OpenAPI 当作最终交付。
 
 生成完整设计、执行设计评审或判断设计基线前，读取 [references/review-checklist.md](references/review-checklist.md)，删除重复概要说明、无依据机制、空章节和无法追踪的实现结论。局部问题只执行与当前范围直接相关的检查。

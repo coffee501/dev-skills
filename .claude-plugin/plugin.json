@@ -1,18 +1,36 @@
 {
   "name": "dev-skills",
-  "description": "Cross-domain backend and system-integration lifecycle skills from context discovery through operations.",
-  "version": "7.0.0",
+  "description": "Cross-domain backend and integration lifecycle skills, including frontend interface alignment, from context discovery through operations.",
+  "author": {
+    "name": "Dev Skills Maintainers"
+  },
+  "version": "7.4.1",
+  "mcpServers": {
+    "dev_state": {
+      "command": "node",
+      "args": [
+        "--disable-warning=ExperimentalWarning",
+        "${CLAUDE_PLUGIN_ROOT}/dev-state/server/dev-state-server.mjs"
+      ],
+      "cwd": "${CLAUDE_PLUGIN_ROOT}"
+    }
+  },
+  "agents": [
+    "./.claude/agents/dev-orch.md"
+  ],
   "skills": [
     "./.claude/skills/dev-ctx",
     "./.claude/skills/dev-req",
     "./.claude/skills/dev-hld",
     "./.claude/skills/dev-lld",
+    "./.claude/skills/dev-fia",
     "./.claude/skills/dev-impl",
     "./.claude/skills/dev-cr",
     "./.claude/skills/dev-test",
     "./.claude/skills/dev-val",
     "./.claude/skills/dev-rel",
     "./.claude/skills/dev-ops",
-    "./.claude/skills/dev-lc"
+    "./.claude/skills/dev-lc",
+    "./.claude/skills/dev-orch"
   ]
 }

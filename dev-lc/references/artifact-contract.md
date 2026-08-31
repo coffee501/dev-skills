@@ -4,7 +4,7 @@
 
 让所有 `dev-*` Skill 以相同方式标识变更、版本、来源、适用范围、风险和证据。专业 Skill 负责内容，`dev-lc` 只汇总元数据和关系。
 
-当前协议版本为 `DEV-SUITE-7.0`。新增向后兼容字段时增加次版本；删除字段、改变含义、状态语义或 Skill 标识时增加主版本，并对存量产物提供迁移和兼容说明。
+当前协议版本为 `DEV-SUITE-7.1`。新增向后兼容字段时增加次版本；删除字段、改变含义、状态语义或 Skill 标识时增加主版本，并对存量产物提供迁移和兼容说明。
 
 ## Skill 缩写
 
@@ -14,6 +14,7 @@
 | `dev-req` | Requirements | `dev-requirements` |
 | `dev-hld` | High-Level Design | `dev-overview` |
 | `dev-lld` | Low-Level Design | `dev-details` |
+| `dev-fia` | Frontend Interface Alignment | 新增 |
 | `dev-impl` | Implementation | `dev-implementation` |
 | `dev-cr` | Code Review | 新增 |
 | `dev-test` | Test Design | `dev-test-cases` |
@@ -21,6 +22,7 @@
 | `dev-rel` | Release | `dev-release` |
 | `dev-ops` | Operations | `dev-operations` |
 | `dev-lc` | Lifecycle Control | `dev-lifecycle` |
+| `dev-orch` | Orchestration | 新增跨平台调度入口 |
 
 `DEV-SUITE-2.0` 起只在新产物、交接和提示中使用当前名称。历史资料中的原名称按本表解释，不批量改写已有外部证据。
 
@@ -44,6 +46,10 @@
 将正式产物的 `sources/applies_to/risks/evidence` 统一为必需字段；补齐 `MIGRUN/RUNBOOK` 追踪节点，并正式定义
 发布、运行手册、事故、RCA和CAPA状态。6.0产物继续按原版本解释；迁入7.0时补齐公共信封和新状态依据，无法补证的
 字段标记未知，不反推历史评审、授权或完成结论。
+
+`DEV-SUITE-7.1` 新增 `dev-fia` 和 `FIA`，用于将后端接口、事件和机器契约转换为前端消费侧对接文档。
+OpenAPI 等机器契约是输入和支撑制品，`FIA` 是最终对接产物；该能力不新增独立阶段门，也不改变 `API/EVT`、测试和
+验证的责任边界。7.0产物继续有效；迁入7.1时只为适用的前端消费场景补充 `FIA`，不反推历史对接或验收结论。
 
 ## CHG 规则
 
@@ -84,12 +90,14 @@
 | `dev-req` | `REQ`、`RULE`、`AC` |
 | `dev-hld` | `DEC`、`MOD`、`FLOW`、`VAL` |
 | `dev-lld` | `DET`、`DDEC`、`DATA`、`MIG`、`API`、`EVT`、`JOB`、`CFG`、`DVAL` |
+| `dev-fia` | `FIA` |
 | `dev-impl` | `IMP`、`BUILD`，以及自动化代码的实现证据 |
 | `dev-cr` | `REV` |
 | `dev-test` | `TSC`、`TC`、`TDP`、`TD`、`TENV`、`TCOND`、`AUT` 规格 |
 | `dev-val` | `RUN`、`EVD`、`DEFECT`、`GATE`，以及自动化门禁状态确认 |
 | `dev-rel` | `REL`、`DEP`、`MIGRUN`、`OBS` |
 | `dev-ops` | `RUNBOOK`、`INC`、`RCA`、`CAPA` |
+| `dev-orch` | 不拥有专业标识；只协调 `dev-lc` 控制对象和专业产物引用 |
 
 模块可以引用其他模块的编号，但不得重编号、改变其含义或冒充其责任方接受状态。`AUT` 的测试目标和规格归
 `dev-test`，对应代码以 `IMP(kind=test-automation)` 记录，是否进入验证门禁由 `dev-val` 或项目质量责任方确认。
@@ -103,6 +111,9 @@
 花括号表示实现与测试设计可以并行推进，不表示串行先后。自动化实现单独建立
 `TC → AUT → IMP(kind=test-automation) → BUILD → REV → RUN/EVD`。低风险自动化变更可以按项目评审政策将 `REV` 标记为
 不适用，但必须记录依据。允许跳过其他不适用节点，但必须说明原因；健康发布不要求创建 `INC/RCA/CAPA`。
+
+存在前端或其他交互式消费方时，按需建立 `REQ/RULE/AC → API/EVT/机器契约 → FIA → TC/VAL → EVD`。`FIA` 是
+消费侧解释与协作制品，不要求插入所有变更的主串行链，也不替代机器契约、测试用例或执行证据。
 
 `CTX/CTXF/CTXP/CTXG` 是可被任意适用阶段引用的As-Is证据侧输入，不属于强制串行门，也不替代
 `REQ/DEC/DET/IMP/TC`。`CTXG` 传递未知、冲突和证据边界，不得被下游当作已确认事实。

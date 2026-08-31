@@ -5,7 +5,7 @@
 ## IMP
 
 ```yaml
-protocol_version: DEV-SUITE-7.0
+protocol_version: DEV-SUITE-7.1
 id: IMP-001
 type: implementation
 change: CHG-001
@@ -34,7 +34,7 @@ updated_at: YYYY-MM-DDThh:mm:ss+08:00
 ## BUILD
 
 ```yaml
-protocol_version: DEV-SUITE-7.0
+protocol_version: DEV-SUITE-7.1
 id: BUILD-001
 type: local-check-batch
 change: CHG-001

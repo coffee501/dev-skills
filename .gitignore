@@ -4,7 +4,13 @@
 .claude/*
 !.claude/skills/
 !.claude/skills/**
+!.claude/agents/
+!.claude/agents/**
 CLAUDE.md
 docs/.archive
 AGENTS.md
 .vscode
+
+# Local interpreter caches
+__pycache__/
+*.py[cod]

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate DEV-SUITE-7.0 code-review artifacts."""
+"""Validate DEV-SUITE-7.0 and 7.1 code-review artifacts."""
 
 from __future__ import annotations
 
@@ -15,6 +15,7 @@ COMMON = {
     "protocol_version", "id", "type", "change", "version", "status", "owner",
     "sources", "applies_to", "risks", "evidence", "updated_at",
 }
+SUPPORTED_PROTOCOLS = {"DEV-SUITE-7.0", "DEV-SUITE-7.1"}
 REQUIRED = {
     "review_scope", "base", "head", "imp_refs", "build_refs", "requirement_refs", "design_refs",
     "test_refs", "files_reviewed", "generated_or_external", "findings", "required_actions",
@@ -36,8 +37,8 @@ def validate_artifact(document: Any) -> list[str]:
     missing = sorted((COMMON | REQUIRED) - document.keys())
     if missing:
         errors.append("missing required fields: " + ", ".join(missing))
-    if document.get("protocol_version") != "DEV-SUITE-7.0":
-        errors.append("protocol_version must be DEV-SUITE-7.0")
+    if document.get("protocol_version") not in SUPPORTED_PROTOCOLS:
+        errors.append("protocol_version must be one of: DEV-SUITE-7.0, DEV-SUITE-7.1")
     if document.get("type") != "code-review":
         errors.append("type must be code-review")
     if not isinstance(document.get("id"), str) or not re.fullmatch(r"REV-(?:PENDING-)?[A-Za-z0-9][A-Za-z0-9._-]*", document["id"]):

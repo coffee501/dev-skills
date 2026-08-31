@@ -1,0 +1,93 @@
+{
+  "schema_version": 1,
+  "cases": [
+    {
+      "id": "single-stage-direct-route",
+      "mode": "direct",
+      "route": ["dev-test"],
+      "parallel_groups": [],
+      "requires_explicit_authorization": false,
+      "invariants": ["does not create unnecessary orchestration", "specialist skill owns the output"]
+    },
+    {
+      "id": "brownfield-end-to-end",
+      "mode": "durable-coordinate",
+      "route": ["dev-ctx", "dev-req", "dev-hld", "dev-lld", "dev-test", "dev-impl", "dev-cr", "dev-val"],
+      "parallel_groups": [["dev-lld", "dev-test"]],
+      "requires_explicit_authorization": false,
+      "invariants": ["state is reconstructed from CHG HOF and LCV", "test design may progress against a versioned baseline"]
+    },
+    {
+      "id": "migration-through-release",
+      "mode": "durable-coordinate",
+      "route": ["dev-ctx", "dev-req", "dev-hld", "dev-lld", "dev-test", "dev-impl", "dev-cr", "dev-val", "dev-rel", "dev-ops"],
+      "parallel_groups": [["dev-lld", "dev-test"]],
+      "requires_explicit_authorization": true,
+      "invariants": ["migration execution is separate from implementation", "release and production operations require scoped authorization"]
+    },
+    {
+      "id": "handoff-rejection-replan",
+      "mode": "durable-coordinate",
+      "route": ["dev-lld", "dev-req", "dev-lld"],
+      "parallel_groups": [],
+      "requires_explicit_authorization": false,
+      "invariants": ["rejection reason and supersession are preserved", "only affected branches are replanned"]
+    },
+    {
+      "id": "input-version-invalidation",
+      "mode": "durable-coordinate",
+      "route": ["dev-lc", "dev-lld", "dev-test", "dev-impl"],
+      "parallel_groups": [["dev-lld", "dev-test"]],
+      "requires_explicit_authorization": false,
+      "invariants": ["input changes trigger invalidation before continuation", "old artifacts remain traceable"]
+    },
+    {
+      "id": "depth-limit-fallback",
+      "mode": "route-only",
+      "route": ["dev-req", "dev-hld", "dev-lld"],
+      "parallel_groups": [],
+      "requires_explicit_authorization": false,
+      "invariants": ["the orchestrator stops dispatching at the configured depth limit", "the parent session receives bounded task packages"]
+    },
+    {
+      "id": "external-state-unavailable",
+      "mode": "route-only",
+      "route": ["dev-lc"],
+      "parallel_groups": [],
+      "requires_explicit_authorization": false,
+      "invariants": ["the orchestrator reports that state was not persisted", "no fallback lifecycle directory is created in the project"]
+    },
+    {
+      "id": "promotion-boundary",
+      "mode": "durable-coordinate",
+      "route": ["dev-lld", "dev-lc"],
+      "parallel_groups": [],
+      "requires_explicit_authorization": true,
+      "invariants": ["promotion_prepare records intent without writing the target", "only an authorized specialist writes the final project artifact"]
+    },
+    {
+      "id": "frontend-consumer-alignment",
+      "mode": "durable-coordinate",
+      "route": ["dev-lld", "dev-fia", "dev-test", "dev-val"],
+      "parallel_groups": [["dev-fia", "dev-test"]],
+      "requires_explicit_authorization": false,
+      "invariants": ["dev-fia starts from a versioned API or machine-contract baseline", "OpenAPI is not treated as the final frontend handoff", "frontend code generation remains outside dev-fia"]
+    },
+    {
+      "id": "codex-session-coordinate",
+      "mode": "session-coordinate",
+      "route": ["dev-ctx", "dev-req", "dev-hld", "dev-lld", "dev-test", "dev-impl", "dev-cr", "dev-val"],
+      "parallel_groups": [["dev-lld", "dev-test"]],
+      "requires_explicit_authorization": false,
+      "invariants": ["Codex uses native subagents for bounded specialist tasks", "state_persistence is none and no project-local state is created", "the root orchestrator owns integration and final verification"]
+    },
+    {
+      "id": "codex-native-unavailable",
+      "mode": "route-only",
+      "route": ["dev-req", "dev-hld", "dev-lld"],
+      "parallel_groups": [],
+      "requires_explicit_authorization": false,
+      "invariants": ["missing native subagent tools do not become a specialist failure", "the orchestrator returns bounded task packages without claiming execution"]
+    }
+  ]
+}

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate DEV-SUITE-7.0 lifecycle-control JSON artifacts."""
+"""Validate DEV-SUITE-7.0 and 7.1 lifecycle-control JSON artifacts."""
 
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Any
 
 
-PROTOCOL = "DEV-SUITE-7.0"
+SUPPORTED_PROTOCOLS = {"DEV-SUITE-7.0", "DEV-SUITE-7.1"}
 COMMON = {
     "protocol_version", "id", "type", "change", "version", "status", "owner",
     "sources", "applies_to", "risks", "evidence", "updated_at",
@@ -66,8 +66,8 @@ def validate_artifact(document: Any) -> list[str]:
     missing = sorted((COMMON | rule["required"]) - document.keys())
     if missing:
         errors.append("missing required fields: " + ", ".join(missing))
-    if document.get("protocol_version") != PROTOCOL:
-        errors.append(f"protocol_version must be {PROTOCOL}")
+    if document.get("protocol_version") not in SUPPORTED_PROTOCOLS:
+        errors.append("protocol_version must be one of: DEV-SUITE-7.0, DEV-SUITE-7.1")
     artifact_id = document.get("id")
     if not isinstance(artifact_id, str) or not re.fullmatch(re.escape(rule["prefix"]) + r"(?:PENDING-)?[A-Za-z0-9][A-Za-z0-9._-]*", artifact_id):
         errors.append(f"id must be a non-empty {rule['prefix']} identifier")

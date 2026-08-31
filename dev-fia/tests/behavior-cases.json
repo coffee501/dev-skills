@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "cases": [
+    {
+      "id": "openapi-only-is-insufficient",
+      "expected_mode": "alignment-diagnosis",
+      "invariants": ["OpenAPI remains a source artifact", "missing business and consumption semantics remain explicit"]
+    },
+    {
+      "id": "new-required-request-field",
+      "expected_mode": "incremental-update",
+      "invariants": ["affected consumers and version combinations are identified", "compatibility and rollback are defined before readiness"]
+    },
+    {
+      "id": "async-accepted-not-completed",
+      "expected_mode": "new-alignment",
+      "invariants": ["accepted and completed are distinct", "polling callback or event finality is documented"]
+    },
+    {
+      "id": "permission-redaction-and-absence",
+      "expected_mode": "new-alignment",
+      "invariants": ["null absent empty and redacted remain distinct", "data scope comes from an authoritative source"]
+    },
+    {
+      "id": "mixed-frontend-backend-versions",
+      "expected_mode": "incremental-update",
+      "invariants": ["all supported version combinations are assessed", "release rollback and deprecation conditions are explicit"]
+    },
+    {
+      "id": "candidate-openapi-from-code",
+      "expected_mode": "alignment-diagnosis",
+      "invariants": ["generated OpenAPI is marked candidate", "inferred semantics are routed to the contract owner"]
+    },
+    {
+      "id": "no-frontend-code-generation",
+      "expected_mode": "new-alignment",
+      "invariants": ["FIA documentation is the final deliverable", "clients SDKs hooks mocks components and UI code are not generated"]
+    }
+  ]
+}

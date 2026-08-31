@@ -22,7 +22,7 @@
 ## CTX 信封
 
 ```yaml
-protocol_version: DEV-SUITE-7.0
+protocol_version: DEV-SUITE-7.1
 id: CTX-001
 type: implementation-context
 change: none

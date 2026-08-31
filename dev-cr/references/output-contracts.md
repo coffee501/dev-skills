@@ -2,7 +2,7 @@
 
 ## 通用信封
 
-正式 `REV` 使用 `DEV-SUITE-7.0`，包含 `protocol_version/id/type/change/version/status/owner/sources/applies_to/risks/evidence/updated_at`，按需提供 `supersedes`。
+正式 `REV` 使用当前 `DEV-SUITE-7.1`；7.0存量产物继续兼容。包含 `protocol_version/id/type/change/version/status/owner/sources/applies_to/risks/evidence/updated_at`，按需提供 `supersedes`。
 
 ## REV 字段
 
@@ -25,4 +25,3 @@ python scripts/validate_review_artifact.py <review.json>
 ```
 
 校验器只检查最低结构、状态和跨字段不变量，不证明评审充分或发现正确。
-

@@ -28,6 +28,23 @@
 
 适配器不得添加、删除或改写业务流程、安全边界、产物、状态和阶段门语义。
 
+Claude Code 是当前调度 Agent 的首要运行平台。`.claude/agents/dev-orch.md` 同时作为项目级 Agent，并由插件清单
+注册为插件 Agent。推荐用 `claude --agent dev-orch` 启动为主会话调度器。作为子 Agent 时，可在宿主配置的派生深度内继续
+分派；当 `Agent` 工具不可用或达到深度/并发限制时退回只读路由。调度语义来自 `orchestration-protocol.md`，Agent 文件
+不得复制共享生命周期协议。
+
+插件通过 `dev_state` MCP 提供外置状态能力。状态写入只允许使用 `mcp__dev_state__*`，不得向项目创建生命周期缓存目录。
+状态根目录优先使用 `DEV_SKILLS_STATE_HOME`，否则使用 Claude 的插件数据目录；MCP 不可用时 Agent 必须退回 route-only。
+
+## 调度 Agent 的 Codex 兼容
+
+根目录 `dev-orch/SKILL.md` 是 Claude Code 与 Codex 共用的调度核心。Codex 显式使用 `$dev-orch`，并在原生多代理能力可用时
+通过子代理协调专业 Skill；不可用时退回 `route-only`。Codex 没有符合外置状态契约的服务时，可以在用户要求本会话执行且
+无需恢复的前提下使用 `session-coordinate`，但必须报告状态不持久化，并且不得向项目写入备用状态。
+
+Claude Code 的 `.claude/skills/dev-orch` 和 `.claude/agents/dev-orch.md` 是薄适配层。两端工具对应关系维护在
+[平台调度映射](../../dev-orch/references/platform-mapping.md)，不得改变 `CHG/HOF/LCV`、阶段门、专业责任或授权语义。
+
 ## 维护规则
 
 修改 Skill 名称、描述或触发策略时，同步更新两端元数据；修改正文和参考文件时只改核心目录。新增或删除 Skill 时，

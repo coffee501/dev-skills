@@ -16,7 +16,7 @@
 ## REL
 
 ```yaml
-protocol_version: DEV-SUITE-7.0
+protocol_version: DEV-SUITE-7.1
 id: REL-001
 type: release
 change: CHG-PENDING-001
@@ -38,7 +38,7 @@ updated_at: 2026-01-01T00:00:00+08:00
 ## DEP
 
 ```yaml
-protocol_version: DEV-SUITE-7.0
+protocol_version: DEV-SUITE-7.1
 id: DEP-001
 type: deployment-batch
 change: CHG-PENDING-001
@@ -63,7 +63,7 @@ updated_at: 2026-01-01T00:00:00+08:00
 ## MIGRUN
 
 ```yaml
-protocol_version: DEV-SUITE-7.0
+protocol_version: DEV-SUITE-7.1
 id: MIGRUN-001
 type: migration-run
 change: CHG-PENDING-001
@@ -87,7 +87,7 @@ updated_at: 2026-01-01T00:00:00+08:00
 ## OBS
 
 ```yaml
-protocol_version: DEV-SUITE-7.0
+protocol_version: DEV-SUITE-7.1
 id: OBS-001
 type: release-observation
 change: CHG-PENDING-001
