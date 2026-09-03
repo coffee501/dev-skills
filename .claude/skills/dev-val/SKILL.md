@@ -1,6 +1,6 @@
 ---
 name: dev-val
-description: Execute approved backend and integration tests, preserve auditable evidence, classify failures, govern retries and flaky tests, and evaluate validation gates. Use for verification, regression, retest, CI evidence review, and authorized non-functional experiments.
+description: 执行批准的后端与集成测试，治理证据、失败分类和验证门禁。
 disable-model-invocation: true
 ---
 

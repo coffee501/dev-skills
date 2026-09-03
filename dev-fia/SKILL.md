@@ -1,6 +1,6 @@
 ---
 name: dev-fia
-description: "Turn backend API, event, and schema contracts into frontend integration alignment documents（前端接口对接文档、联调说明、接口消费语义、OpenAPI对齐、契约变更影响）for cross-domain backend and system-integration work. Use when frontend teams need scenario-oriented guidance for calling backend capabilities, interpreting fields and states, handling errors and asynchronous results, or coordinating compatibility and release. OpenAPI is a machine-readable foundation, not the final deliverable. Do not generate frontend code, SDKs, hooks, mocks, components, or UI designs."
+description: "将后端契约转化为场景化的前端接口对接指引。"
 ---
 
 # Dev FIA

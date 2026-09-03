@@ -1,6 +1,6 @@
 ---
 name: dev-lld
-description: Create, diagnose, review, or refine implementation-ready detailed designs for backend services and integrations. Use for program flows, schemas, APIs, events, jobs, transactions, concurrency, errors, security, observability, compatibility, and migration details.
+description: 将需求与架构转化为可执行的后端与集成详细设计。
 disable-model-invocation: false
 ---
 

@@ -1,6 +1,6 @@
 ---
 name: dev-fia
-description: Turn backend API, event, and schema contracts into scenario-oriented frontend integration documents. OpenAPI is an input foundation; do not generate frontend code.
+description: 将后端契约转化为场景化的前端接口对接指引。
 disable-model-invocation: false
 ---
 

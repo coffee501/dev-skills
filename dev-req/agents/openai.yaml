@@ -1,6 +1,6 @@
 interface:
   display_name: "REQ 需求分析"
-  short_description: "Turn rough needs and existing behavior into requirements"
+  short_description: "从业务需要和已有实现中整理清晰、可验收的后端需求文档"
   default_prompt: "使用 $dev-req 分析、评审需求，或从项目已有实现中反向整理候选需求。"
   icon_small: "./assets/icon.svg"
   icon_large: "./assets/icon.svg"

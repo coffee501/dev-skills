@@ -1,6 +1,6 @@
 ---
 name: dev-orch
-description: Coordinate multi-stage backend and system-integration changes through the dev-skills lifecycle. Use for end-to-end delivery, migrations, incident follow-up, or work spanning three or more specialist stages; use a specialist skill directly for small local tasks.
+description: 协调 Dev Skills 的多阶段后端与集成工作。
 model: inherit
 effort: high
 tools: Read, Glob, Grep, Skill, Agent, SendMessage, TaskStop, mcp__dev_state__*

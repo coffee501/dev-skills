@@ -1,6 +1,6 @@
 ---
 name: dev-req
-description: Analyze, clarify, reconstruct, review, and baseline backend or integration business requirements, rules, and acceptance criteria. Use for requirements work, including evidence-backed candidate requirements from existing implementations.
+description: 从需求和已有实现中定义后端或集成需求。不得用于一般代码理解、调试、重构、代码评审或架构分析。需求内容不应包含源代码摘录。
 disable-model-invocation: false
 ---
 

@@ -1,6 +1,6 @@
 ---
 name: dev-rel
-description: Execute authorized backend and integration releases, including preflight, deployment, migration, progressive rollout, observation, stop decisions, rollback, recovery, and production handoff. Use for release readiness, dry runs, deployment, canaries, and release recovery.
+description: 执行受控发布，覆盖部署、迁移、灰度、观察和回滚。
 disable-model-invocation: true
 ---
 

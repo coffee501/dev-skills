@@ -3,12 +3,12 @@
   "owner": {
     "name": "Dev Skills Maintainers"
   },
-  "description": "Backend and system-integration development lifecycle skills for Claude Code.",
+  "description": "面向 Claude Code 的后端与系统集成生命周期技能。",
   "plugins": [
     {
       "name": "dev-skills",
       "source": "./",
-      "description": "Cross-domain backend and integration lifecycle skills, including frontend interface alignment, from context discovery through operations.",
+      "description": "后端与系统集成生命周期技能。",
       "version": "7.4.1"
     }
   ]

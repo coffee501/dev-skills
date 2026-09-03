@@ -1,6 +1,6 @@
 interface:
   display_name: "FIA 前端接口对接"
-  short_description: "Turn backend contracts into frontend integration guidance"
+  short_description: "将后端契约整理为场景化的前端接口对接指引文档与说明"
   default_prompt: "Use $dev-fia to create a frontend integration document from backend contracts and OpenAPI."
 policy:
   products:

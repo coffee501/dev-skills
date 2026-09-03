@@ -15,65 +15,65 @@ function schema(properties, required = []) {
 }
 
 const tools = [
-  { name: "state_info", description: "Return the external state location and schema version. Never writes to the project.", inputSchema: schema({}) },
-  { name: "workspace_resolve", description: "Resolve or bind a project to an external workspace identity.", inputSchema: schema({
+  { name: "state_info", description: "读取外部状态位置和架构版本；不得写入项目。", inputSchema: schema({}) },
+  { name: "workspace_resolve", description: "解析或绑定项目到外部工作区。", inputSchema: schema({
     project_path: { type: "string" }, git_common_dir: { type: "string" }, remote_fingerprint: { type: "string" },
     display_name: { type: "string" }, workspace_id: { type: "string" },
   }, ["project_path"]) },
-  { name: "change_get_or_create", description: "Read an existing CHG or create it in external state.", inputSchema: schema({
+  { name: "change_get_or_create", description: "在外部状态中读取或创建 CHG。", inputSchema: schema({
     ...COMMON_WRITE, status: { type: "string" }, payload: { type: "object" },
   }, ["workspace_id", "change_id", "actor", "source"]) },
-  { name: "lifecycle_get", description: "Read the current external LCV for a change.", inputSchema: schema({
+  { name: "lifecycle_get", description: "读取变更当前的外部 LCV。", inputSchema: schema({
     workspace_id: { type: "string" }, change_id: { type: "string" },
   }, ["workspace_id", "change_id"]) },
-  { name: "lifecycle_put", description: "Create or update the external LCV with optimistic version control.", inputSchema: schema({
+  { name: "lifecycle_put", description: "使用乐观版本控制创建或更新外部 LCV。", inputSchema: schema({
     ...COMMON_WRITE, status: { type: "string" }, payload: { type: "object" },
   }, ["workspace_id", "change_id", "expected_version", "status", "payload", "actor", "source"]) },
-  { name: "artifact_put", description: "Register an intermediate artifact envelope outside the project.", inputSchema: schema({
+  { name: "artifact_put", description: "在项目外登记中间产物。", inputSchema: schema({
     ...COMMON_WRITE, artifact_id: { type: "string" }, artifact_type: { type: "string" }, status: { type: "string" }, payload: { type: "object" },
   }, ["workspace_id", "change_id", "artifact_id", "artifact_type", "expected_version", "status", "actor", "source"]) },
-  { name: "artifact_list", description: "List external intermediate artifact envelopes.", inputSchema: schema({
+  { name: "artifact_list", description: "列出外部中间产物。", inputSchema: schema({
     workspace_id: { type: "string" }, change_id: { type: "string" }, artifact_type: { type: "string" }, status: { type: "string" }, limit: { type: "integer" },
   }, ["workspace_id", "change_id"]) },
-  { name: "work_prepare", description: "Create a versioned WIT work item with an input fingerprint.", inputSchema: schema({
+  { name: "work_prepare", description: "创建带输入指纹的版本化 WIT。", inputSchema: schema({
     ...COMMON_WRITE, work_item_id: { type: "string" }, skill: { type: "string" }, input_versions: { type: "array" },
     owned_paths: { type: "array" }, owned_artifacts: { type: "array" }, expected_outputs: { type: "array" }, constraints: { type: "object" },
   }, ["workspace_id", "change_id", "work_item_id", "skill", "input_versions", "expected_version", "actor", "source"]) },
-  { name: "work_claim", description: "Claim a WIT for a named Agent using its current version.", inputSchema: schema({
+  { name: "work_claim", description: "按当前版本为 Agent 认领 WIT。", inputSchema: schema({
     ...COMMON_WRITE, work_item_id: { type: "string" }, agent_id: { type: "string" },
   }, ["workspace_id", "change_id", "work_item_id", "agent_id", "expected_version", "actor", "source"]) },
-  { name: "work_complete", description: "Complete or block a claimed WIT; rejects stale fingerprints and wrong Agents.", inputSchema: schema({
+  { name: "work_complete", description: "完成或阻塞 WIT；拒绝过期指纹或错误 Agent。", inputSchema: schema({
     ...COMMON_WRITE, work_item_id: { type: "string" }, agent_id: { type: "string" }, input_fingerprint: { type: "string" },
     status: { enum: ["Completed", "Blocked", "Failed", "Cancelled"] }, outputs: { type: "array" }, evidence: { type: "array" }, result: { type: "object" },
   }, ["workspace_id", "change_id", "work_item_id", "agent_id", "input_fingerprint", "status", "expected_version", "actor", "source"]) },
-  { name: "agent_run_bind", description: "Bind a Claude Agent run to a WIT and input fingerprint.", inputSchema: schema({
+  { name: "agent_run_bind", description: "将 Agent 运行绑定到 WIT 和输入指纹。", inputSchema: schema({
     ...COMMON_WRITE, run_id: { type: "string" }, agent_id: { type: "string" }, work_item_id: { type: "string" },
     input_fingerprint: { type: "string" }, status: { type: "string" }, details: { type: "object" },
   }, ["workspace_id", "change_id", "agent_id", "work_item_id", "input_fingerprint", "expected_version", "actor", "source"]) },
-  { name: "handoff_prepare", description: "Create a Prepared HOF in external state.", inputSchema: schema({
+  { name: "handoff_prepare", description: "在外部状态中创建 Prepared HOF。", inputSchema: schema({
     ...COMMON_WRITE, handoff_id: { type: "string" }, from: { type: "string" }, to: { type: "string" }, inputs: { type: "array" },
     expected_outputs: { type: "array" }, unresolved: { type: "array" }, preserved_behavior: { type: "array" },
   }, ["workspace_id", "change_id", "handoff_id", "from", "to", "expected_version", "actor", "source"]) },
-  { name: "handoff_accept", description: "Accept a Prepared HOF with explicit decision evidence.", inputSchema: schema({
+  { name: "handoff_accept", description: "使用决策证据接受 Prepared HOF。", inputSchema: schema({
     ...COMMON_WRITE, handoff_id: { type: "string" }, decided_by: { type: "string" }, reason: { type: "string" }, evidence: { type: "array" },
   }, ["workspace_id", "change_id", "handoff_id", "decided_by", "reason", "expected_version", "actor", "source"]) },
-  { name: "handoff_reject", description: "Reject a Prepared HOF while preserving the reason.", inputSchema: schema({
+  { name: "handoff_reject", description: "拒绝 Prepared HOF 并保留原因。", inputSchema: schema({
     ...COMMON_WRITE, handoff_id: { type: "string" }, decided_by: { type: "string" }, reason: { type: "string" }, evidence: { type: "array" },
   }, ["workspace_id", "change_id", "handoff_id", "decided_by", "reason", "expected_version", "actor", "source"]) },
-  { name: "invalidation_apply", description: "Atomically mark affected external objects and record invalidation.", inputSchema: schema({
+  { name: "invalidation_apply", description: "原子标记受影响对象并记录失效信息。", inputSchema: schema({
     ...COMMON_WRITE, invalidation_id: { type: "string" }, reason: { type: "string" }, targets: { type: "array" },
   }, ["workspace_id", "change_id", "invalidation_id", "reason", "targets", "expected_version", "actor", "source"]) },
-  { name: "promotion_prepare", description: "Record intent to promote a final artifact. This tool never writes the target file.", inputSchema: schema({
+  { name: "promotion_prepare", description: "记录最终产物晋升意图；不得写入目标文件。", inputSchema: schema({
     ...COMMON_WRITE, promotion_id: { type: "string" }, source_ref: { type: "string" }, target_path: { type: "string" }, expected_hash: { type: "string" },
   }, ["workspace_id", "change_id", "promotion_id", "source_ref", "target_path", "expected_version", "actor", "source"]) },
-  { name: "promotion_confirm", description: "Record an already-authorized final artifact write. This tool never writes the target file.", inputSchema: schema({
+  { name: "promotion_confirm", description: "记录已授权的最终产物写入；本工具不写入目标文件。", inputSchema: schema({
     ...COMMON_WRITE, promotion_id: { type: "string" }, actual_path: { type: "string" }, actual_hash: { type: "string" },
     confirmed_by: { type: "string" }, evidence: { type: "array" },
   }, ["workspace_id", "change_id", "promotion_id", "actual_path", "actual_hash", "confirmed_by", "expected_version", "actor", "source"]) },
-  { name: "change_archive", description: "Archive a CHG without deleting state or audit history.", inputSchema: schema({
+  { name: "change_archive", description: "归档 CHG，不删除状态或审计历史。", inputSchema: schema({
     ...COMMON_WRITE, archived_by: { type: "string" }, reason: { type: "string" },
   }, ["workspace_id", "change_id", "archived_by", "reason", "expected_version", "actor", "source"]) },
-  { name: "audit_list", description: "List immutable audit events for a change.", inputSchema: schema({
+  { name: "audit_list", description: "列出变更的不可变审计事件。", inputSchema: schema({
     workspace_id: { type: "string" }, change_id: { type: "string" }, limit: { type: "integer" },
   }, ["workspace_id", "change_id"]) },
 ];

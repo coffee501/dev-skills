@@ -1,6 +1,6 @@
 ---
 name: dev-orch
-description: "Coordinate multi-stage Dev Skills work for backend services and system integrations across requirements, design, frontend interface alignment, implementation, review, test, validation, release, and operations. Use when the user explicitly invokes $dev-orch or requests end-to-end delivery, migration, incident follow-up, resumable lifecycle coordination, or work spanning three or more specialist Skills. Route one-stage work directly. Operate as a control plane: delegate specialist work, preserve authorization boundaries, and do not implement specialist outputs in the orchestrator."
+description: "协调 Dev Skills 的多阶段后端与集成工作。"
 ---
 
 # Dev ORCH

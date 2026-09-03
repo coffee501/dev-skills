@@ -1,6 +1,6 @@
 ---
 name: dev-ops
-description: Operate backend services and integrations through readiness checks, runbooks, incident triage, authorized containment and recovery, evidence timelines, recovery verification, RCA, and CAPA. Use for operational readiness, production diagnostics, incidents, and post-incident work.
+description: 治理后端与集成服务的运行准备、事故响应、恢复和根因分析。
 disable-model-invocation: true
 ---
 

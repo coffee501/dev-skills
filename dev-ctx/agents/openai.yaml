@@ -1,6 +1,6 @@
 interface:
   display_name: "CTX 实现理解"
-  short_description: "Map existing backend behavior from code and evidence"
+  short_description: "根据代码与证据梳理现有后端及集成行为，形成当前状态上下文"
   default_prompt: "使用 $dev-ctx 理解当前项目实现；按需要输出临时视图或可版本化复用的As-Is上下文。"
   icon_small: "./assets/icon.svg"
   icon_large: "./assets/icon.svg"

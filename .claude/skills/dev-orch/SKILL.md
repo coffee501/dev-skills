@@ -1,6 +1,6 @@
 ---
 name: dev-orch
-description: Start the Dev Skills lifecycle orchestrator for a multi-stage backend or system-integration change.
+description: 协调 Dev Skills 的多阶段后端与集成工作。
 argument-hint: "[change objective, scope, constraints, and available inputs]"
 disable-model-invocation: true
 context: fork

@@ -1,6 +1,6 @@
 ---
 name: dev-lc
-description: Govern an end-to-end backend or system-integration change across context, requirements, architecture, detailed design, implementation, review, testing, validation, release, and operations. Use for routing, CHG identity, traceability, invalidation, stage gates, and handoffs.
+description: 治理后端与集成变更的阶段路由、门禁、追踪和交接。
 disable-model-invocation: false
 ---
 

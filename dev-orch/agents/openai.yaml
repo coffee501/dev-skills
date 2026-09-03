@@ -1,6 +1,6 @@
 interface:
   display_name: "ORCH 生命周期调度"
-  short_description: "Coordinate multi-stage Dev Skills work with native agents"
+  short_description: "协调 Dev Skills 的多阶段后端与集成工作流程"
   default_prompt: "Use $dev-orch to coordinate this multi-stage backend or integration change."
 policy:
   products:

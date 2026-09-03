@@ -1,6 +1,6 @@
 ---
 name: dev-cr
-description: Independently review backend and integration implementations, pull requests, commits, patches, contracts, configuration, migrations, events, jobs, and test automation. Use for findings, verdicts, pre-merge risk assessment, and remediation re-review.
+description: 评审后端与集成变更，输出可追踪的问题、结论和整改建议。
 disable-model-invocation: false
 ---
 

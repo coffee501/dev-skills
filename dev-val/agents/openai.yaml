@@ -1,6 +1,6 @@
 interface:
   display_name: "VAL 验证执行"
-  short_description: "Run validation and classify evidence, failures, and gates"
+  short_description: "执行批准的后端与集成测试，治理证据、失败分类和验证门禁"
   default_prompt: "Use $dev-val to run the approved validation scope, preserve auditable evidence, classify failures, and evaluate the validation gate."
   icon_small: "./assets/icon.svg"
   icon_large: "./assets/icon.svg"

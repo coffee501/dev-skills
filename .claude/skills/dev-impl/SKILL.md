@@ -1,6 +1,6 @@
 ---
 name: dev-impl
-description: Implement approved backend-service or system-integration changes and produce traceable implementation and local-build evidence. Use for code, contracts, migrations, configuration, jobs, events, adapters, defect fixes, refactors, and test automation implementation.
+description: 依据已确认设计实施后端与集成变更，并提供可追踪构建证据。
 disable-model-invocation: true
 ---
 

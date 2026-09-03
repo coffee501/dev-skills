@@ -1,6 +1,6 @@
 ---
 name: dev-ops
-description: "Operate backend services and system integrations through production-readiness checks, runbook creation or review, incident triage, authorized containment and recovery actions, evidence-preserving timelines, recovery verification, root-cause analysis, and corrective/preventive action tracking. Use for operational readiness, production diagnostics, active incident response, service restoration, controlled data or configuration recovery, post-incident review, RCA/CAPA, and operational feedback into development. Do not perform planned releases, invent business/SLO/security decisions, implement permanent fixes, execute unapproved production changes, or treat recovery as incident closure. | 治理运行准备、生产事故响应、恢复验证及RCA/CAPA闭环"
+description: "治理后端与集成服务的运行准备、事故响应、恢复和根因分析。"
 ---
 
 # Dev OPS

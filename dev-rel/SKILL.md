@@ -1,6 +1,6 @@
 ---
 name: dev-rel
-description: "Execute approved backend-service and system-integration releases against precisely identified environments, including preflight checks, artifact and configuration deployment, data or state migration, progressive rollout, traffic or feature activation, observation, stop decisions, rollback, forward recovery, and production handoff. Use for release-readiness diagnosis, dry runs, non-production or production deployment, migration execution, canary or phased rollout, rollback, interrupted-release recovery, external release-record import, and release audit. Do not invent release strategy, modify product code, waive validation or authorization, perform unplanned production repair, or own long-term operations and incident RCA. | 执行受控后端发布并治理部署、迁移、观察、回滚和生产交接"
+description: "执行受控发布，覆盖部署、迁移、灰度、观察和回滚。"
 ---
 
 # Dev REL

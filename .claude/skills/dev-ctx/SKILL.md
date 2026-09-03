@@ -1,6 +1,6 @@
 ---
 name: dev-ctx
-description: Build or refresh evidence-backed As-Is context for existing backend services and integrations. Use for project understanding, reusable current-state baselines, execution-flow tracing, impact discovery, and downstream design context.
+description: 根据代码和证据梳理现有后端与集成行为。
 disable-model-invocation: true
 ---
 

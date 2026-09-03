@@ -1,6 +1,6 @@
 ---
 name: dev-test
-description: Create, diagnose, review, or refine risk-driven test designs and cases for backend services and integrations. Use for functional, state, boundary, data, permission, API, event, batch, concurrency, migration, security, performance, and regression testing design.
+description: 设计风险驱动、可追踪的后端与系统集成测试用例。
 disable-model-invocation: false
 ---
 

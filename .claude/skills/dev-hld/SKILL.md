@@ -1,6 +1,6 @@
 ---
 name: dev-hld
-description: Create, review, or refine high-level designs for backend services and system integrations. Use for system boundaries, architecture, modules, core flows, data ownership, compatibility, migration, deployment, operations, and design decisions.
+description: 设计系统边界、模块职责、流程、数据归属和关键架构决策。
 disable-model-invocation: false
 ---
 

@@ -1,6 +1,6 @@
 interface:
   display_name: "HLD 概要设计"
-  short_description: "Design system boundaries, modules, and key decisions"
+  short_description: "设计系统边界、模块职责、核心流程和关键架构决策方案"
   default_prompt: "使用 $dev-hld 从需求基线和现有实现创建、评审或增量完善系统概要设计。"
   icon_small: "./assets/icon.svg"
   icon_large: "./assets/icon.svg"
