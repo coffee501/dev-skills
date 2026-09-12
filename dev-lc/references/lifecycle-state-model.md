@@ -19,7 +19,7 @@
 | 实现单元主路径 | `Planned → InProgress → Implemented → Reviewed → Integrated` |
 | 实现单元异常路径 | `Planned/InProgress → Blocked`；未集成状态可进入 `Aborted/Superseded` |
 | 本地构建或检查批次 | `Planned → Running → Passed / Failed / Blocked / Aborted` |
-| 代码评审 | `Planned → InReview → Approved / ChangesRequested / Blocked / Superseded` |
+| 实现审查 | `Planned → InReview → Approved / ChangesRequested / Blocked / Superseded` |
 | 自动化门禁状态 | `NotEnabled → Enabled → Quarantined / Disabled → Enabled / Deprecated` |
 | 正式执行批次 | `Planned → Ready → Running → Passed / Failed / Blocked / Aborted` |
 | 验证证据 | `Valid → Expired / Revoked` |
@@ -77,7 +77,7 @@ Skill 默认只能输出 `Suggested`。输入中存在明确授权记录时才�
 
 - 文档基线只说明该阶段输入已经稳定，不说明实现完成。
 - 实现完成不说明测试设计充分或验证通过。
-- 实现或本地构建完成不说明代码评审已经批准。
+- 实现或本地构建完成不说明实现审查已经批准。
 - 测试设计基线不说明测试可以执行。
 - 执行就绪不说明执行通过。
 - 验证通过不说明发布已经批准。

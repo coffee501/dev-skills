@@ -16,7 +16,7 @@
 | `dev-lld` | Low-Level Design | `dev-details` |
 | `dev-fia` | Frontend Interface Alignment | 新增 |
 | `dev-impl` | Implementation | `dev-implementation` |
-| `dev-cr` | Code Review | 新增 |
+| `dev-cr` | Code Review / Implementation Review | 新增 |
 | `dev-test` | Test Design | `dev-test-cases` |
 | `dev-val` | Validation | `dev-validation` |
 | `dev-rel` | Release | `dev-release` |
@@ -42,7 +42,7 @@
 `CTXG Open/Resolved/Superseded` 生命周期和标准失效 `HOF`。5.0 的 `Unknown/Conflicted CTXF` 迁移为 `CTXG`，并保留
 原事实、来源和版本作为迁移证据；缺少子制品版本或父 `CTX` 的5.0上下文在补齐前不得直接标记为 `Eligible CTX`。
 
-`DEV-SUITE-7.0` 将代码评审纳入正式生命周期，引入 `dev-cr` 和 `REV`；为 `CHG/HOF/LCV` 补充机器可校验契约；
+`DEV-SUITE-7.0` 将实现审查纳入正式生命周期，引入 `dev-cr` 和 `REV`（产物类型保留 `code-review`）；为 `CHG/HOF/LCV` 补充机器可校验契约；
 将正式产物的 `sources/applies_to/risks/evidence` 统一为必需字段；补齐 `MIGRUN/RUNBOOK` 追踪节点，并正式定义
 发布、运行手册、事故、RCA和CAPA状态。6.0产物继续按原版本解释；迁入7.0时补齐公共信封和新状态依据，无法补证的
 字段标记未知，不反推历史评审、授权或完成结论。

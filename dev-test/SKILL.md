@@ -92,6 +92,7 @@ P0/P1/P2 只用于问题严重度，不用于测试优先级。测试场景和�
 - 创建完整测试设计或确定文档结构时，读取 [references/outline.md](references/outline.md)。
 - 生成具体测试场景、用例、步骤、数据和预期结果时，读取 [references/test-case-model.md](references/test-case-model.md)。
 - 分析状态、规则、边界、组合和覆盖缺口时，读取 [references/coverage-model.md](references/coverage-model.md)。
+- 新增测试层、夹具、数据分区、自动化抽象或拆分大量用例时，读取 [复杂度与拆分治理](../dev-lc/references/complexity-governance.md)。
 - 已有功能变更、缺陷修复、迁移、下线或混合版本时，读取 [references/compatibility-regression.md](references/compatibility-regression.md)。
 - 存在安全、性能、可靠性、容量、容灾、合规、敏感数据、多租户、外部暴露、不可逆副作用、可观测性目标或明确风险时，读取 [references/non-functional-testing.md](references/non-functional-testing.md)。
 - 执行完整评审或测试基线判断时，读取 [references/review-checklist.md](references/review-checklist.md)。

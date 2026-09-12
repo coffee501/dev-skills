@@ -32,13 +32,17 @@ class DevCrContractTests(unittest.TestCase):
         self.assertIsNotNone(match)
         self.assertEqual(sorted(re.findall(r"(?m)^([A-Za-z0-9_-]+):", match.group("body"))), ["description", "name"])
         self.assertIn("name: dev-cr", match.group("body"))
+        for value in ("实际实现及变更", "正确、完整地落实", "实现质量与工程风险"):
+            self.assertIn(value, match.group("body"))
         self.assertIn("$dev-cr", self.manifest)
+        self.assertIn('display_name: "CR 实现审查"', self.manifest)
+        self.assertIn("实际实现的正确性、完整性", self.manifest)
         self.assertRegex(self.manifest, r"allow_implicit_invocation:\s*true")
 
     def test_required_contracts_and_links(self) -> None:
         for name in ("review-model.md", "review-checklist.md", "re-review.md", "output-contracts.md"):
             self.assertTrue((ROOT / "references" / name).is_file())
-        for value in ("REV Approved", "共享协议不可用", "不自动调用其他 Skill", "validate_review_artifact.py"):
+        for value in ("REV Approved", "共享协议不可用", "不自动调用其他 Skill", "复杂度与拆分治理", "validate_review_artifact.py"):
             self.assertIn(value, self.skill)
         pattern = re.compile(r"\[[^\]]+\]\(([^)#]+)(?:#[^)]+)?\)")
         for path in ROOT.rglob("*.md"):
@@ -50,7 +54,12 @@ class DevCrContractTests(unittest.TestCase):
     def test_behavior_cases(self) -> None:
         document = json.loads((ROOT / "tests" / "behavior-cases.json").read_text(encoding="utf-8"))
         self.assertEqual(document["schema_version"], 1)
-        self.assertEqual(len(document["cases"]), 8)
+        self.assertGreaterEqual(len(document["cases"]), 12)
+        case_ids = {case["id"] for case in document["cases"]}
+        self.assertTrue({
+            "planned-implementation-omitted", "implementation-deviates-from-design",
+            "speculative-abstraction", "mechanical-implementation-fragmentation",
+        }.issubset(case_ids))
         for case in document["cases"]:
             self.assertGreaterEqual(len(case["expected_invariants"]), 2)
             self.assertGreaterEqual(len(case["forbidden_outcomes"]), 1)

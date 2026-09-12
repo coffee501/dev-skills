@@ -108,8 +108,8 @@ def validate_suite(root: Path = SUITE_ROOT) -> list[str]:
             errors.append("Claude plugin skill registry does not match the suite")
         if set(plugin.get("agents", [])) != {"./.claude/agents/dev-orch.md"}:
             errors.append("Claude plugin must register .claude/agents/dev-orch.md")
-        if plugin.get("version") != "7.4.1":
-            errors.append("Claude plugin version must be 7.4.1 for cross-platform orchestration")
+        if plugin.get("version") != "7.5.0":
+            errors.append("Claude plugin version must be 7.5.0 for implementation-review and complexity-governance updates")
         mcp = plugin.get("mcpServers", {}).get("dev_state", {})
         if mcp.get("command") != "node":
             errors.append("Claude plugin dev_state MCP must use the bundled Node server")
@@ -126,8 +126,8 @@ def validate_suite(root: Path = SUITE_ROOT) -> list[str]:
         entries = [item for item in marketplace.get("plugins", []) if item.get("name") == "dev-skills"]
         if len(entries) != 1:
             errors.append("Claude marketplace must register exactly one dev-skills plugin")
-        elif entries[0].get("source") != "./" or entries[0].get("version") != "7.4.1":
-            errors.append("Claude marketplace dev-skills entry must use source ./ and version 7.4.1")
+        elif entries[0].get("source") != "./" or entries[0].get("version") != "7.5.0":
+            errors.append("Claude marketplace dev-skills entry must use source ./ and version 7.5.0")
     except (OSError, json.JSONDecodeError) as exc:
         errors.append(f"unable to read Claude marketplace manifest: {exc}")
 
@@ -205,6 +205,20 @@ def validate_suite(root: Path = SUITE_ROOT) -> list[str]:
     for token in ("DEV-SUITE-7.1", "dev-cr", "REV", "dev-fia", "FIA", "dev-orch", "MIGRUN", "RUNBOOK"):
         if token not in artifact_contract:
             errors.append(f"artifact contract missing {token}")
+
+    complexity_contract = LC_ROOT / "references" / "complexity-governance.md"
+    if not complexity_contract.is_file():
+        errors.append("complexity and decomposition governance contract is missing")
+    else:
+        complexity_text = complexity_contract.read_text(encoding="utf-8")
+        for token in ("必要复杂度", "过度设计", "有效拆分", "过度拆分", "最低充分决策", "不得仅凭"):
+            if token not in complexity_text:
+                errors.append(f"complexity governance contract missing {token}")
+        complexity_consumers = {"dev-lc", "dev-hld", "dev-lld", "dev-impl", "dev-cr", "dev-test", "dev-orch"}
+        for skill_name in sorted(complexity_consumers):
+            skill_text = (root / skill_name / "SKILL.md").read_text(encoding="utf-8")
+            if "complexity-governance.md" not in skill_text:
+                errors.append(f"{skill_name}: complexity governance link is missing")
 
     external_contract = LC_ROOT / "references" / "external-state-contract.md"
     if not external_contract.is_file():

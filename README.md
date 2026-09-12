@@ -13,7 +13,7 @@
 - **Claude Code多阶段调度**：使用 `/dev-skills:dev-orch <任务>` 启动同步调度子会话，或使用 `claude --plugin-dir . --agent dev-orch` 启动调度主会话；单阶段任务仍直接调用专业 Skill。
 - **Codex多阶段调度**：使用 `$dev-orch`；原生子代理可用时协调专业任务，不可用时输出只读路线和任务包。
 
-`dev-*/agents/openai.yaml` 是 Codex 展示和触发元数据；`.claude/skills/*` 是 Claude Code薄适配器；
+`dev-*/agents/openai.yaml` 是 Codex 展示和触发元数据；`.claude/skills/*` 是 Claude 先Code薄适配器；
 [Claude插件清单](.claude-plugin/plugin.json)负责可分发注册。适配层不复制核心流程，平台差异见
 [工具兼容规则](dev-lc/references/tool-compatibility.md)。
 
@@ -34,7 +34,7 @@ SQLite 状态库；项目中只允许出现用户明确确认的最终文档、�
 | `dev-lld` | 实现级详细设计 | `DET/DDEC/DATA/MIG/API/EVT/JOB/CFG/DVAL` |
 | `dev-fia` | 将后端契约转为前端场景化对接文档，不生成前端代码 | `FIA` |
 | `dev-impl` | 代码、配置、迁移和自动化实现 | `IMP/BUILD` |
-| `dev-cr` | 独立代码评审与整改复审 | `REV` |
+| `dev-cr` | 独立实现审查、结论与整改复审 | `REV` |
 | `dev-test` | 测试场景、用例、数据和自动化规格 | `TSC/TC/TDP/TD/TENV/TCOND/AUT` |
 | `dev-val` | 测试执行、证据、缺陷和质量门 | `RUN/EVD/DEFECT/GATE` |
 | `dev-rel` | 发布、迁移执行、观察和恢复 | `REL/DEP/MIGRUN/OBS` |

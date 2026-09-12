@@ -33,7 +33,7 @@
 > `Planned / InProgress / Blocked / Implemented / Reviewed → Superseded`
 
 - 实际文件已经修改且目标检查完成后才能标记 `Implemented`。
-- 只有存在独立代码评审证据时才能标记 `Reviewed`。
+- 只有存在独立实现审查证据时才能标记 `Reviewed`。
 - 只有变更进入目标集成分支或等价集成基线时才能标记 `Integrated`。
 - `Blocked`记录阻塞原因、受影响范围、解除条件和阻塞前状态；恢复后回到相应活动状态。
 - `Aborted`表示停止且不计划继续；`Superseded`必须引用后继 `IMP`。二者均保留历史，不复用编号。
@@ -67,4 +67,4 @@
 
 ## 完成与证据边界
 
-`BUILD Passed`只证明指定候选版本在记录环境中通过列出的本地检查。它不等于代码评审通过、`RUN/EVD/GATE`通过、可发布或生产稳定。
+`BUILD Passed`只证明指定候选版本在记录环境中通过列出的本地检查。它不等于实现审查通过、`RUN/EVD/GATE`通过、可发布或生产稳定。

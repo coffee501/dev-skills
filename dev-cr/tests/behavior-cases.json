@@ -8,6 +8,30 @@
       "forbidden_outcomes": ["仅凭CI通过或作者描述批准"]
     },
     {
+      "id": "planned-implementation-omitted",
+      "request": "审查声称已经完成但遗漏一个计划内IMP和验收项的实现候选",
+      "expected_invariants": ["同时读取计划范围和实际差异", "将计划内遗漏记录为实现完整性发现并阻止Approved"],
+      "forbidden_outcomes": ["因已修改文件本身没有明显缺陷而批准整个候选"]
+    },
+    {
+      "id": "implementation-deviates-from-design",
+      "request": "实现能够编译并通过局部测试，但绕过了已接受的事务和失败语义设计",
+      "expected_invariants": ["核对有效需求与设计基线", "区分实现偏差和设计缺口并路由正确责任方"],
+      "forbidden_outcomes": ["把编译或局部测试通过当作设计符合性证据"]
+    },
+    {
+      "id": "speculative-abstraction",
+      "request": "审查为单一当前场景新增通用框架、扩展点和依赖但没有有效需求或风险依据的实现",
+      "expected_invariants": ["检查当前依据和更简单的现有实现路径", "按实际维护与运行影响形成P2或P1发现"],
+      "forbidden_outcomes": ["因抽象看起来可扩展而默认合理", "仅凭新增类或文件数量判定问题"]
+    },
+    {
+      "id": "mechanical-implementation-fragmentation",
+      "request": "审查把相同职责、事务、失败和部署边界的连续步骤拆成大量模块和IMP的实现",
+      "expected_invariants": ["检查拆分是否具有独立边界和可验证收益", "指出新增调用、映射、测试与交接成本并给出最小整改目标"],
+      "forbidden_outcomes": ["把编号完整或单一职责口号当作拆分依据", "为了减少数量合并真正独立的安全或事务边界"]
+    },
+    {
       "id": "unknown-base-head-blocked",
       "request": "评审一段代码片段并批准整个发布候选",
       "expected_invariants": ["将结论限制到片段", "完整批准因base/head和范围未知而Blocked"],
@@ -51,4 +75,3 @@
     }
   ]
 }
-

@@ -14,7 +14,7 @@ description: "依据已确认设计实施后端与集成变更，并提供可追
 - 不改变 `REQ/RULE/AC`、系统边界、模块职责、数据权威或已接受 `DEC/DDEC`。
 - 不用实现便利性替代业务、架构或失败语义决策。
 - `AUT` 规格归 `dev-test`；本 Skill 只实现其对应测试代码并建立 `IMP(kind=test-automation)`。
-- `REV` 归 `dev-cr` 或项目等价独立评审流程；本 Skill 不自行将实现标记为评审批准。
+- `REV` 归 `dev-cr` 或项目等价独立实现审查流程；本 Skill 不自行将实现标记为评审批准。
 - `BUILD` 只记录实现阶段本地检查；正式 `RUN/EVD/GATE` 归 `dev-val`。
 - 不执行发布、生产迁移、生产流量或生产数据操作；分别交接 `dev-rel` 或 `dev-ops`。
 - 不覆盖、清理或回退用户已有的无关修改。
@@ -64,6 +64,7 @@ description: "依据已确认设计实施后端与集成变更，并提供可追
 ## 按需读取参考文件
 
 - 拆分、维护或汇报 `IMP/BUILD` 时读取 [references/implementation-unit.md](references/implementation-unit.md)。
+- 新增抽象、层、模块、依赖、适配机制或拆分 `IMP` 时读取 [复杂度与拆分治理](../dev-lc/references/complexity-governance.md)。
 - 修改代码、依赖、数据、配置或运行环境前读取 [references/execution-safety.md](references/execution-safety.md)。
 - 已有代码、存量功能变更、缺陷修复或重构时读取 [references/brownfield-change.md](references/brownfield-change.md)。
 - 涉及数据、Schema、契约、配置或运行状态迁移时读取 [references/migration-implementation.md](references/migration-implementation.md)。
@@ -86,7 +87,7 @@ description: "依据已确认设计实施后端与集成变更，并提供可追
 9. 先执行受影响范围内最小检查，再按风险扩展到类型、静态、构建、契约和相关测试。
 10. 记录 `BUILD`、失败分类、未运行检查、设计偏差和剩余风险。
 11. 更新 `IMP` 状态和追踪，传播需要复审的 `TC/AUT/EVD/GATE/REL`，不得自行改写其状态。
-12. 形成面向 `dev-cr` 的代码评审 `HOF`；已有适用 `REV Approved` 时，再形成面向 `dev-val` 的验证 `HOF`。未达到完成条件时明确阻塞和可继续内容。
+12. 形成面向 `dev-cr` 的实现审查 `HOF`；已有适用 `REV Approved` 时，再形成面向 `dev-val` 的验证 `HOF`。未达到完成条件时明确阻塞和可继续内容。
 
 ## 处理设计偏差
 
@@ -102,7 +103,7 @@ description: "依据已确认设计实施后端与集成变更，并提供可追
 
 只有全部适用条件满足才建议实现完成：计划内 `IMP` 已实施；实际修改可追踪到有效输入；代码、契约、配置和迁移一致；必要 `BUILD` 检查通过；用户修改未被覆盖；迁移和不兼容变化可恢复；设计偏差已解决或交接；下游潜在影响已经标识；面向 `dev-cr` 的评审输入已形成。`IMP Reviewed` 还必须引用适用 `REV Approved` 或项目等价独立评审证据；面向 `dev-val` 的正式验证交接在此之后形成。
 
-实现完成不表示代码评审通过、`VAL/DVAL`通过、发布获批或生产稳定。`Reviewed/Integrated` 状态只有存在相应评审或集成证据时才能使用。
+实现完成不表示实现审查通过、`VAL/DVAL`通过、发布获批或生产稳定。`Reviewed/Integrated` 状态只有存在相应评审或集成证据时才能使用。
 
 ## 组织输出
 

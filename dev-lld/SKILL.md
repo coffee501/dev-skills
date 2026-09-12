@@ -96,6 +96,7 @@ description: "将需求与架构转化为可执行的后端与集成详细设计
 
 - 创建完整文档、选择章节或图时，读取 [references/outline.md](references/outline.md)。
 - 设计模块、功能或核心程序处理时，读取 [references/implementation-unit.md](references/implementation-unit.md)。
+- 新增抽象、层、类、接口、扩展点或拆分 `DET` 和实施任务时，读取 [复杂度与拆分治理](../dev-lc/references/complexity-governance.md)。
 - 存在已有代码、功能变更、集成、迁移、下线或混合版本时，读取 [references/change-compatibility.md](references/change-compatibility.md)。
 - 评审或执行最终基线检查时，读取 [references/review-checklist.md](references/review-checklist.md)。
 - 只回答局部问题时，不读取无关文件。

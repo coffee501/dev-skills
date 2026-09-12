@@ -22,6 +22,7 @@ description: "治理后端与集成变更的阶段路由、门禁、追踪和交
 - 创建阶段推进、问题返回或责任转移时，读取 [references/handoff-contract.md](references/handoff-contract.md)。
 - 上游、实现、测试、环境、发布或事故发生变化时，读取 [references/invalidation-rules.md](references/invalidation-rules.md)。
 - 创建或校验 `CHG/HOF/LCV` 时，读取 [references/output-contracts.md](references/output-contracts.md)。
+- 判断设计、实现、测试或调度是否存在无依据复杂度或机械拆分时，读取 [references/complexity-governance.md](references/complexity-governance.md)。
 - 维护 Codex、Claude Code 或其他 Agent Skills 客户端的发现和触发适配时，读取 [references/tool-compatibility.md](references/tool-compatibility.md)。
 - 使用调度 Agent、安排多阶段并行工作或从中断状态恢复时，读取 [references/orchestration-protocol.md](references/orchestration-protocol.md)。
 - 保存或读取调度中间状态、工作项和晋升记录时，读取 [references/external-state-contract.md](references/external-state-contract.md)。
@@ -42,7 +43,7 @@ description: "治理后端与集成变更的阶段路由、门禁、追踪和交
 | `dev-lld` | 实现级详细设计、契约和迁移方案 |
 | `dev-fia` | 将后端接口、事件和机器契约转为前端消费与联调文档 |
 | `dev-impl` | 代码、配置、契约和迁移实施 |
-| `dev-cr` | 独立代码评审、问题分级、结论和整改复审 |
+| `dev-cr` | 独立实现审查、问题分级、结论和整改复审 |
 | `dev-test` | 测试场景、用例、数据和自动化设计 |
 | `dev-val` | 测试执行、证据、失败分类和门禁建议 |
 | `dev-rel` | 发布、迁移执行、观察和回滚 |

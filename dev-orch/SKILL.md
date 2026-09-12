@@ -17,6 +17,7 @@ description: "协调 Dev Skills 的多阶段后端与集成工作。"
 - `CHG/HOF/LCV/WIT` 外置持久化与项目写入边界：[外置状态契约](../dev-lc/references/external-state-contract.md)
 - Codex、Claude Code 与无子代理宿主的工具映射：[平台调度映射](references/platform-mapping.md)
 - 输入或产物版本发生变化：[失效传播规则](../dev-lc/references/invalidation-rules.md)
+- 需要拆分阶段、任务包、Agent 或交接时：[复杂度与拆分治理](../dev-lc/references/complexity-governance.md)
 
 套件协议不可用时，只能根据当前输入给出局部路线和任务包；不得宣称正式 `CHG/HOF/LCV`、阶段门或持久化状态已经建立。
 
@@ -30,6 +31,7 @@ description: "协调 Dev Skills 的多阶段后端与集成工作。"
 | `durable-coordinate` | 用户要求实际推进，原生子代理和符合契约的外置状态服务均可用 | 以版本化 `CHG/HOF/LCV/WIT` 协调和恢复 |
 
 不要因为用户使用 `$dev-orch` 就机械运行全部 Skill。预计跨三个以上专业阶段、需要并行、迁移、失效传播、反复交接或中断恢复时才进入协调模式。
+复杂度治理在本 Skill 中只约束调度控制面；技术方案和实现拆分是否合理仍由对应专业 Skill 判断。
 
 ## 建立调度上下文
 
@@ -50,7 +52,7 @@ description: "协调 Dev Skills 的多阶段后端与集成工作。"
 3. 仅并行没有硬依赖、使用同一有效输入版本且不会争用同一责任对象的任务。
 4. 优先续接已有子代理；输入失效时先停止受影响分支，再按新版本重新派发。
 5. 专业结果返回后只做控制面检查：身份、版本、范围、证据、风险、交接和下游输入是否有效。
-6. 内容正确性由相应专业 Skill 负责；调度器不重写专业结论，不替代代码评审或验证。
+6. 内容正确性由相应专业 Skill 负责；调度器不重写专业结论，不替代实现审查或验证。
 7. 子代理失败、超时或交接被拒绝时保留证据和原因，只重新规划受影响分支，禁止无界重试。
 
 `session-coordinate` 不创建正式 `WIT`。使用会话内 `SWI-001` 任务包，至少包含目标 Skill、输入摘要/指纹、范围、责任对象、
