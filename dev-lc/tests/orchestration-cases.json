@@ -4,63 +4,79 @@
     {
       "id": "single-stage-direct-route",
       "mode": "direct",
+      "lifecycle_route_ref": "LCV-PENDING-DIRECT@v1",
+      "route_change_requested": false,
       "route": ["dev-test"],
       "parallel_groups": [],
       "requires_explicit_authorization": false,
-      "invariants": ["does not create unnecessary orchestration", "specialist skill owns the output"]
+      "invariants": ["does not create unnecessary orchestration", "direct routing is derived from the referenced LC route", "specialist skill owns the output"]
     },
     {
       "id": "brownfield-end-to-end",
       "mode": "durable-coordinate",
-      "route": ["dev-ctx", "dev-req", "dev-hld", "dev-lld", "dev-test", "dev-impl", "dev-cr", "dev-val"],
-      "parallel_groups": [["dev-lld", "dev-test"]],
+      "lifecycle_route_ref": "LCV-BROWNFIELD@v1",
+      "route_change_requested": false,
+      "route": ["dev-ctx", "dev-req", "dev-test", "dev-hld", "dev-lld", "dev-impl", "dev-cr", "dev-val"],
+      "parallel_groups": [["dev-test", "dev-hld"], ["dev-test", "dev-lld"]],
       "requires_explicit_authorization": false,
-      "invariants": ["state is reconstructed from CHG HOF and LCV", "test design may progress against a versioned baseline"]
+      "invariants": ["state is reconstructed from the referenced LC route plus ORCH work items", "ORCH does not add remove or reinterpret LC stages", "test design starts from the G1 requirement baseline and is refined against versioned design inputs", "test-automation implementation and review complete before formal G5 when applicable"]
     },
     {
-      "id": "migration-through-release",
+      "id": "migration-development-readiness",
       "mode": "durable-coordinate",
-      "route": ["dev-ctx", "dev-req", "dev-hld", "dev-lld", "dev-test", "dev-impl", "dev-cr", "dev-val", "dev-rel", "dev-ops"],
-      "parallel_groups": [["dev-lld", "dev-test"]],
-      "requires_explicit_authorization": true,
-      "invariants": ["migration execution is separate from implementation", "release and production operations require scoped authorization"]
+      "lifecycle_route_ref": "LCV-MIGRATION@v1",
+      "route_change_requested": false,
+      "route": ["dev-ctx", "dev-req", "dev-test", "dev-hld", "dev-lld", "dev-impl", "dev-cr", "dev-val"],
+      "parallel_groups": [["dev-test", "dev-hld"], ["dev-test", "dev-lld"]],
+      "requires_explicit_authorization": false,
+      "invariants": ["the route stops after development validation", "production migration execution stays outside the suite"]
     },
     {
       "id": "handoff-rejection-replan",
       "mode": "durable-coordinate",
+      "lifecycle_route_ref": "LCV-HANDOFF@v2",
+      "route_change_requested": true,
       "route": ["dev-lld", "dev-req", "dev-lld"],
       "parallel_groups": [],
       "requires_explicit_authorization": false,
-      "invariants": ["rejection reason and supersession are preserved", "only affected branches are replanned"]
+      "invariants": ["rejection reason and supersession are preserved", "ORCH requests LC to produce a successor route", "only affected branches are recompiled"]
     },
     {
       "id": "input-version-invalidation",
       "mode": "durable-coordinate",
-      "route": ["dev-lc", "dev-lld", "dev-test", "dev-impl"],
+      "lifecycle_route_ref": "LCV-INVALIDATION@v3",
+      "route_change_requested": true,
+      "route": ["dev-lld", "dev-test", "dev-impl"],
       "parallel_groups": [["dev-lld", "dev-test"]],
       "requires_explicit_authorization": false,
-      "invariants": ["input changes trigger invalidation before continuation", "old artifacts remain traceable"]
+      "invariants": ["ORCH stops the affected task and requests LC invalidation assessment before continuation", "ORCH does not rewrite lifecycle status", "old artifacts remain traceable"]
     },
     {
       "id": "depth-limit-fallback",
       "mode": "route-only",
+      "lifecycle_route_ref": "LCV-DEPTH@v1",
+      "route_change_requested": false,
       "route": ["dev-req", "dev-hld", "dev-lld"],
       "parallel_groups": [],
       "requires_explicit_authorization": false,
-      "invariants": ["the orchestrator stops dispatching at the configured depth limit", "the parent session receives bounded task packages"]
+      "invariants": ["the orchestrator stops dispatching at the configured depth limit", "route-only projects the referenced LC route without redefining it", "the parent session receives bounded task packages"]
     },
     {
       "id": "external-state-unavailable",
       "mode": "route-only",
-      "route": ["dev-lc"],
+      "lifecycle_route_ref": "LCV-PENDING-EXTERNAL@v1",
+      "route_change_requested": false,
+      "route": ["dev-req", "dev-hld"],
       "parallel_groups": [],
       "requires_explicit_authorization": false,
-      "invariants": ["the orchestrator reports that state was not persisted", "no fallback lifecycle directory is created in the project"]
+      "invariants": ["the orchestrator reports that state was not persisted", "route-only references the non-durable LC snapshot", "no fallback lifecycle directory is created in the project"]
     },
     {
       "id": "promotion-boundary",
       "mode": "durable-coordinate",
-      "route": ["dev-lld", "dev-lc"],
+      "lifecycle_route_ref": "LCV-PROMOTION@v1",
+      "route_change_requested": false,
+      "route": ["dev-lld"],
       "parallel_groups": [],
       "requires_explicit_authorization": true,
       "invariants": ["promotion_prepare records intent without writing the target", "only an authorized specialist writes the final project artifact"]
@@ -68,6 +84,8 @@
     {
       "id": "frontend-consumer-alignment",
       "mode": "durable-coordinate",
+      "lifecycle_route_ref": "LCV-FRONTEND@v1",
+      "route_change_requested": false,
       "route": ["dev-lld", "dev-fia", "dev-test", "dev-val"],
       "parallel_groups": [["dev-fia", "dev-test"]],
       "requires_explicit_authorization": false,
@@ -76,18 +94,33 @@
     {
       "id": "codex-session-coordinate",
       "mode": "session-coordinate",
-      "route": ["dev-ctx", "dev-req", "dev-hld", "dev-lld", "dev-test", "dev-impl", "dev-cr", "dev-val"],
-      "parallel_groups": [["dev-lld", "dev-test"]],
+      "lifecycle_route_ref": "LCV-PENDING-CODEX@v1",
+      "route_change_requested": false,
+      "route": ["dev-ctx", "dev-req", "dev-test", "dev-hld", "dev-lld", "dev-impl", "dev-cr", "dev-val"],
+      "parallel_groups": [["dev-test", "dev-hld"], ["dev-test", "dev-lld"]],
       "requires_explicit_authorization": false,
-      "invariants": ["Codex uses native subagents for bounded specialist tasks", "state_persistence is none and no project-local state is created", "the root orchestrator owns integration and final verification"]
+      "invariants": ["Codex uses native subagents for bounded specialist tasks", "test design starts at G1 and applicable test automation is implemented and reviewed before G5", "state_persistence is none and no project-local state is created", "coordination completion remains separate from LC lifecycle status", "the root orchestrator owns execution integration and result collection"]
     },
     {
       "id": "codex-native-unavailable",
       "mode": "route-only",
+      "lifecycle_route_ref": "LCV-PENDING-NATIVE@v1",
+      "route_change_requested": false,
       "route": ["dev-req", "dev-hld", "dev-lld"],
       "parallel_groups": [],
       "requires_explicit_authorization": false,
       "invariants": ["missing native subagent tools do not become a specialist failure", "the orchestrator returns bounded task packages without claiming execution"]
+    },
+    {
+      "id": "missing-lifecycle-route",
+      "mode": "route-only",
+      "lifecycle_route_ref": null,
+      "lifecycle_route_status": "missing",
+      "route_change_requested": false,
+      "route": [],
+      "parallel_groups": [],
+      "requires_explicit_authorization": false,
+      "invariants": ["ORCH does not synthesize an authoritative lifecycle route", "no execution task graph is generated until LC provides a route snapshot"]
     }
   ]
 }

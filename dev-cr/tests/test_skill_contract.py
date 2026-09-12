@@ -83,6 +83,55 @@ class DevCrContractTests(unittest.TestCase):
         errors = self.validator.validate_artifact(dict(review, status="ChangesRequested", findings=[]))
         self.assertTrue(any("requires an open P0/P1" in error for error in errors))
 
+    def test_8_0_approved_review_requires_proven_independence(self) -> None:
+        review = {
+            "protocol_version": "DEV-SUITE-8.0", "id": "REV-800", "type": "code-review",
+            "change": "CHG-800", "version": 1, "status": "Approved", "owner": "reviewer-agent",
+            "sources": ["IMP-800@v1"], "applies_to": {"base": "a", "head": "b"}, "risks": [],
+            "evidence": ["diff://a..b"], "updated_at": "2026-09-12T12:00:00+08:00",
+            "review_scope": {"repository": "repo"}, "base": "a", "head": "b", "imp_refs": ["IMP-800@v1"],
+            "build_refs": ["BUILD-800@v1"], "requirement_refs": ["AC-800@v1"], "design_refs": ["DDEC-800@v1"],
+            "test_refs": ["TC-800@v1"], "files_reviewed": ["service.py"], "generated_or_external": [],
+            "findings": [], "required_actions": [], "verification_requirements": ["targeted regression"],
+            "limitations": [], "handoff_refs": ["HOF-800@v1"],
+            "reviewer": {
+                "identity": "reviewer-agent", "role": "implementation-reviewer", "execution_context": "review-run-800",
+            },
+            "implementation_actors": [{
+                "identity": "implementation-agent", "role": "implementation-owner", "execution_context": "implementation-run-800",
+            }],
+            "independence": {
+                "status": "Independent", "basis": ["agent-run://review-run-800"], "compensating_controls": [],
+            },
+        }
+        self.assertEqual(self.validator.validate_artifact(review), [])
+
+        same_reviewer = dict(review, implementation_actors=[{
+            "identity": "reviewer-agent", "role": "implementation-owner", "execution_context": "implementation-run-800",
+        }])
+        self.assertTrue(any("reviewer identity distinct" in error for error in self.validator.validate_artifact(same_reviewer)))
+
+        same_context = dict(review, implementation_actors=[{
+            "identity": "implementation-agent", "role": "implementation-owner", "execution_context": "review-run-800",
+        }])
+        self.assertTrue(any("reviewer execution_context distinct" in error for error in self.validator.validate_artifact(same_context)))
+
+        not_established = dict(review, independence={
+            "status": "NotEstablished", "basis": ["review-log://800"], "compensating_controls": [],
+        })
+        self.assertTrue(any("requires established independence" in error for error in self.validator.validate_artifact(not_established)))
+
+        no_controls = dict(review, independence={
+            "status": "CompensatingControls", "basis": ["review-log://800"], "compensating_controls": [],
+        })
+        self.assertTrue(any("requires non-empty compensating_controls" in error for error in self.validator.validate_artifact(no_controls)))
+
+        with_controls = dict(review, independence={
+            "status": "CompensatingControls", "basis": ["review-log://800"],
+            "compensating_controls": ["second-pass-from-clean-context", "mandatory-targeted-validation"],
+        })
+        self.assertEqual(self.validator.validate_artifact(with_controls), [])
+
 
 if __name__ == "__main__":
     unittest.main()

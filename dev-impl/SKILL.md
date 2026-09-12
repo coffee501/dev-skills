@@ -1,6 +1,6 @@
 ---
 name: dev-impl
-description: "依据已确认设计实施后端与集成变更，并提供可追踪构建证据。"
+description: "依据已确认设计实施后端与集成变更，提供可追踪构建证据和人类可读实现交付摘要。"
 ---
 
 # Dev IMPL
@@ -16,12 +16,13 @@ description: "依据已确认设计实施后端与集成变更，并提供可追
 - `AUT` 规格归 `dev-test`；本 Skill 只实现其对应测试代码并建立 `IMP(kind=test-automation)`。
 - `REV` 归 `dev-cr` 或项目等价独立实现审查流程；本 Skill 不自行将实现标记为评审批准。
 - `BUILD` 只记录实现阶段本地检查；正式 `RUN/EVD/GATE` 归 `dev-val`。
-- 不执行发布、生产迁移、生产流量或生产数据操作；分别交接 `dev-rel` 或 `dev-ops`。
+- “实现交付摘要”只是指定版本 `IMP/BUILD` 和实际差异的人类可读只读投影，不取得独立编号、状态或结论权威。
+- 不执行发布、生产迁移、生产流量或生产数据操作；这些工作属于套件外部责任流程。
 - 不覆盖、清理或回退用户已有的无关修改。
 
 ## 接入 Dev 生命周期
 
-按 [产物协议](../dev-lc/references/artifact-contract.md) 维护 `IMP/BUILD`，按 [状态与阶段门](../dev-lc/references/lifecycle-state-model.md) 区分实现、本地检查、独立验证和发布状态。阶段推进、问题返回和责任转移使用 [交接协议](../dev-lc/references/handoff-contract.md)。设计、契约、代码、数据或配置变化时按 [失效传播规则](../dev-lc/references/invalidation-rules.md) 标识潜在影响。
+按 [产物协议](../dev-lc/references/artifact-contract.md) 维护 `IMP/BUILD`，按 [状态与阶段门](../dev-lc/references/lifecycle-state-model.md) 区分实现、本地检查、独立评审和验证状态。阶段推进、问题返回和责任转移使用 [交接协议](../dev-lc/references/handoff-contract.md)。设计、契约、代码、数据或配置变化时按 [失效传播规则](../dev-lc/references/invalidation-rules.md) 标识潜在影响。
 
 共享协议不可用时仍可独立完成范围明确的实现、修复、重构、迁移和自动化代码工作，使用本地 `IMP/BUILD/REV-PENDING-*`
 引用并保留来源、候选、适用范围、风险和证据；不得宣称正式G4、全局编号、独立评审或标准HOF已经确认。
@@ -69,8 +70,10 @@ description: "依据已确认设计实施后端与集成变更，并提供可追
 - 已有代码、存量功能变更、缺陷修复或重构时读取 [references/brownfield-change.md](references/brownfield-change.md)。
 - 涉及数据、Schema、契约、配置或运行状态迁移时读取 [references/migration-implementation.md](references/migration-implementation.md)。
 - 实现 `AUT`、测试夹具或测试基础设施时读取 [references/automation-implementation.md](references/automation-implementation.md)。
-- 需要输出正式实现记录或跨流程交接时读取 [references/delivery-template.md](references/delivery-template.md)。
+- 需要输出正式实现记录、人类可读实现交付摘要或跨流程交接时读取 [references/delivery-template.md](references/delivery-template.md)。
 - 输出实现完成建议或执行完整评审前读取 [references/review-checklist.md](references/review-checklist.md)。
+
+生成或交换JSON形式的 `IMP/BUILD` 时，使用 `scripts/validate_implementation_artifact.py` 校验最低字段、状态和关键交叉约束；校验器不替代实现检查、构建执行或独立评审。
 
 ## 执行实现流程
 
@@ -79,15 +82,18 @@ description: "依据已确认设计实施后端与集成变更，并提供可追
 3. 建立代码、测试、契约、数据访问、配置、任务、依赖和运行单元的As-Is证据基线。
 4. 分析直接与间接影响，区分确定影响、潜在影响和不适用项。
 5. 按单一主要目标拆分 `IMP`，明确依赖、修改范围、恢复方式和本地检查。
-6. 变更既有行为前先确认可证明保持项的测试或其他回归证据。已有 `AC/TC`、权威契约或缺陷复现条件足以确定
-   预期时，可以补充代码级最小回归保护并记录 `IMP(kind=test-automation)`；需要新增业务预期、判定依据或正式
-   自动化规格时交接 `dev-test`，不得自行创建或改写 `AUT`。
+6. 变更既有行为前先确认可证明保持项的测试或其他回归证据。已有稳定 `TC/AUT Ready` 时，将正式自动化测试代码记录为
+   `IMP(kind=test-automation)`。只有 `AC`、权威契约或缺陷复现条件时，可以在产品或修复 `IMP` 中补充最小回归保护并作为
+   本地 `BUILD` 证据，但不得据此宣称 `AUT Ready` 或正式自动化实现闭环；需要新增业务预期、判定依据或正式自动化规格时
+   交接 `dev-test`，不得自行创建或改写 `AUT`。
 7. 使用 `apply_patch` 实施小范围修改；优先复用现有模式、工具和依赖，避免无依据抽象。
 8. 对机器可读契约、模型或Schema使用权威定义，避免维护易漂移的重复副本。
 9. 先执行受影响范围内最小检查，再按风险扩展到类型、静态、构建、契约和相关测试。
 10. 记录 `BUILD`、失败分类、未运行检查、设计偏差和剩余风险。
-11. 更新 `IMP` 状态和追踪，传播需要复审的 `TC/AUT/EVD/GATE/REL`，不得自行改写其状态。
-12. 形成面向 `dev-cr` 的实现审查 `HOF`；已有适用 `REV Approved` 时，再形成面向 `dev-val` 的验证 `HOF`。未达到完成条件时明确阻塞和可继续内容。
+11. 完整实现、跨多个 `IMP` 或准备实现审查交接时，基于当前 `IMP/BUILD` 与实际差异生成明确的人类可读实现交付摘要；
+    局部修改可以在当前输出中使用精简版。摘要不得产生新的批准、完成或验证结论。
+12. 更新 `IMP` 状态和追踪，传播需要复审的 `TC/AUT/EVD/GATE`，不得自行改写其状态。
+13. 形成面向 `dev-cr` 的实现审查 `HOF`；已有适用 `REV Approved` 时，再形成面向 `dev-val` 的验证 `HOF`。未达到完成条件时明确阻塞和可继续内容。
 
 ## 处理设计偏差
 
@@ -101,16 +107,17 @@ description: "依据已确认设计实施后端与集成变更，并提供可追
 
 ## 检查实现完成
 
-只有全部适用条件满足才建议实现完成：计划内 `IMP` 已实施；实际修改可追踪到有效输入；代码、契约、配置和迁移一致；必要 `BUILD` 检查通过；用户修改未被覆盖；迁移和不兼容变化可恢复；设计偏差已解决或交接；下游潜在影响已经标识；面向 `dev-cr` 的评审输入已形成。`IMP Reviewed` 还必须引用适用 `REV Approved` 或项目等价独立评审证据；面向 `dev-val` 的正式验证交接在此之后形成。
+只有全部适用条件满足才建议实现完成：计划内 `IMP` 已实施；实际修改可追踪到有效输入；代码、契约、配置和迁移一致；必要 `BUILD` 检查通过；用户修改未被覆盖；迁移和不兼容变化可恢复；设计偏差已解决或交接；下游潜在影响已经标识；面向 `dev-cr` 的评审输入已形成。完整实现或跨多个 `IMP` 的候选还必须提供绑定当前来源版本和候选身份的人类可读实现交付摘要。适用 `AUT Ready` 必须对应已实现的 `IMP(kind=test-automation)`、当前 `BUILD` 和评审输入，不能以规格存在代替测试代码完成。`IMP Reviewed` 还必须引用适用 `REV Approved` 或项目等价独立评审证据；面向 `dev-val` 的正式验证交接在此之后形成。
 
-实现完成不表示实现审查通过、`VAL/DVAL`通过、发布获批或生产稳定。`Reviewed/Integrated` 状态只有存在相应评审或集成证据时才能使用。
+实现完成不表示实现审查或 `VAL/DVAL` 通过，也不表示外部交付获批或生产稳定。`Reviewed/Integrated` 状态只有存在相应评审或集成证据时才能使用。
 
 ## 组织输出
 
 - **诊断**：有效输入、进入条件、As-Is、P0/P1、可继续工作和 `HOF`。
 - **实施结果**：`CHG`引用、`IMP`状态、变更文件和符号、保持项、实际偏差。
 - **BUILD**：候选版本、工作区、依赖摘要、环境、命令时间与退出码、产物、限制和失败分类。
-- **影响传播**：需要复审或重新验证的测试、证据、门禁和发布产物。
+- **实现交付摘要**：当前 `IMP/BUILD` 来源、候选身份、需求与设计映射、实际修改、行为变化与保持项、契约/数据/配置/迁移/测试影响、检查结果、偏差、限制、剩余风险和交接；它是无独立状态的只读投影视图。
+- **影响传播**：需要复审或重新验证的测试、证据和门禁。
 - **交接**：面向 `dev-cr` 的评审输入；评审批准后面向 `dev-val` 的版本化 `HOF`、剩余风险和验证要求。
 
 完整实现或完成判断前读取评审清单；局部修改只执行与风险直接相关的检查。

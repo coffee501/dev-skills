@@ -7,7 +7,7 @@
 
 建立：
 
-> `TC → AUT → IMP(kind=test-automation) → BUILD → RUN/EVD`
+> `TC → AUT Ready → IMP(kind=test-automation) → BUILD → REV → RUN/EVD`
 
 不得由测试代码反向改变 `TC` 预期，也不得把代码存在写成 `AUT` 规格已确认或门禁已启用。自动化代码状态使用
 `IMP(kind=test-automation)`；`AUT` 规格状态由 `dev-test` 管理；只有进入实际执行门禁并由 `dev-val` 或项目质量
@@ -24,6 +24,9 @@
 - 自动重试不得掩盖首次失败。
 
 ## 交付内容
+
+正式 `IMP(kind=test-automation)` 必须引用稳定的 `TC/AUT Ready`。没有 `AUT Ready` 时，基于明确验收、权威契约或缺陷复现
+条件增加的最小回归测试只能作为产品或修复 `IMP` 的回归保护和 `BUILD` 证据，不得反向补造自动化规格或宣称自动化闭环。
 
 记录关联 `AUT/TC`、代码位置、框架、数据准备、依赖策略、断言、执行入口、适用版本、并行能力和稳定性风险。无法自动化时说明原因并保留人工执行方式。
 

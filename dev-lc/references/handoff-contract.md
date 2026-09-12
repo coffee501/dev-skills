@@ -25,7 +25,7 @@
 | `entry_conditions` | 目标流程开始前必须满足的条件 |
 | `owner` | 交接和接收责任角色 |
 | `sources` | 触发交接的上游产物编号及版本 |
-| `applies_to` | 交接适用的代码、契约、数据、环境或发布版本 |
+| `applies_to` | 交接适用的代码、契约、数据、环境或交付候选版本 |
 | `supersedes` | 被替代交接及版本；没有则省略 |
 | `risks` | 未决风险、接受信息和失效条件 |
 | `evidence` | 支撑交接原因、失效或阻塞结论的证据 |
@@ -33,12 +33,15 @@
 
 ## 交接状态
 
-使用 `Prepared → Acknowledged → Accepted / Rejected → Superseded`。
+允许以下转换：`Prepared → Acknowledged / Accepted / Rejected / Superseded`；
+`Acknowledged → Accepted / Rejected / Superseded`；`Accepted / Rejected → Superseded`。
 
 - 来源 Skill 只能创建 `Prepared`。
+- `Acknowledged` 是可选的收件留痕，不是接受前置门。若使用，8.0必须保留
+  `acknowledgement.acknowledged_by/acknowledged_at`；知悉不等于接受。
 - 发现目标流程、输入版本或责任方不正确时标记 `Rejected` 并说明理由。
-- 没有接收证据时不得假定已经 `Accepted`。
-- 新交接替代旧交接时保留旧编号和后继关系。
+- `Accepted` 或 `Rejected` 本身构成目标责任方的决策记录；尚无这类记录时不得推断已接受。
+- 新交接替代旧交接时保留旧编号和后继关系；8.0 `Superseded` 同时保留 `supersession.reason/superseded_by/superseded_at`。
 - 独立项目上下文基线使用 `change: none` 时，可以直接产生 `change: none` 的上下文交接；不得为了满足格式虚构 `CHG`。
 
 ## 严重度和优先级
@@ -61,10 +64,8 @@
 | 独立实现审查、评审结论和整改复审 | `dev-cr` |
 | 测试覆盖、用例、数据和预期 | `dev-test` |
 | 执行、证据、失败分类和质量门禁 | `dev-val` |
-| 部署、迁移执行、观察和回滚 | `dev-rel` |
-| 运行手册、事故、恢复和持续改进 | `dev-ops` |
 
-合规、SLO、安全授权、外部供应方或项目审批问题路由相应正式责任流程，不强行塞入错误的 `dev-*` 模块。
+发布、生产迁移、流量操作、生产恢复、事故治理、合规、SLO、安全授权、外部供应方或项目审批问题路由套件外部正式责任流程，不强行塞入错误的 `dev-*` 模块，也不创建8.0已移除的发布或运行产物。
 
 `dev-fia` 发现业务、架构或接口语义缺口时必须返回实际权威模块，不能在对接文档中自行修订；只缺少消费侧组织、
 样例、版本组合或联调说明时才由 `dev-fia` 负责。

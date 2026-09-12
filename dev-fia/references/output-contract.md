@@ -4,7 +4,7 @@
 
 ## 公共信封
 
-使用 `DEV-SUITE-7.1`，类型固定为 `frontend-interface-alignment`，ID 使用 `FIA-*`。必须包含统一字段：
+新产物使用 `DEV-SUITE-8.0`，7.1存量产物继续兼容；类型固定为 `frontend-interface-alignment`，ID 使用 `FIA-*`。必须包含统一字段：
 
 `protocol_version/id/type/change/version/status/owner/sources/applies_to/risks/evidence/updated_at`
 
@@ -39,7 +39,7 @@
 
 ```json
 {
-  "protocol_version": "DEV-SUITE-7.1",
+  "protocol_version": "DEV-SUITE-8.0",
   "id": "FIA-001",
   "type": "frontend-interface-alignment",
   "change": "CHG-001",

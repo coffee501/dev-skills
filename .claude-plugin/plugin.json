@@ -1,10 +1,10 @@
 {
   "name": "dev-skills",
-  "description": "后端与系统集成生命周期技能。",
+  "description": "后端与系统集成开发阶段技能。",
   "author": {
     "name": "Dev Skills Maintainers"
   },
-  "version": "7.5.0",
+  "version": "8.0.2",
   "mcpServers": {
     "dev_state": {
       "command": "node",
@@ -28,8 +28,6 @@
     "./.claude/skills/dev-cr",
     "./.claude/skills/dev-test",
     "./.claude/skills/dev-val",
-    "./.claude/skills/dev-rel",
-    "./.claude/skills/dev-ops",
     "./.claude/skills/dev-lc",
     "./.claude/skills/dev-orch"
   ]

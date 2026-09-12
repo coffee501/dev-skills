@@ -98,7 +98,9 @@ Assert-Contains $skill 'Given\s*/\s*When\s*/\s*Then' 'Given / When / Then accept
 Assert-Contains $skill 'references/requirement-framework\.md' 'SKILL.md must route to the requirement framework reference.'
 Assert-Contains $skill 'references/output-contracts\.md' 'SKILL.md must route to the output contract reference.'
 Assert-Contains $skill '已有实现' '反向需求触发文本缺失。'
-Assert-Contains $skill '不得用于一般代码理解、调试、重构、代码评审或架构分析' '负向触发边界缺失。'
+foreach ($excludedUse in @('一般代码理解', '调试', '重构', '实现审查', '代码评审', '架构分析')) {
+    Assert-Contains $skill ([regex]::Escape($excludedUse)) "负向触发边界缺失：$excludedUse。"
+}
 Assert-Contains $skill 'references/implementation-to-requirements\.md' 'SKILL.md must route to the reverse-requirement reference.'
 Assert-Contains $skill 'CAND-\*' 'Candidate-only identifier guidance is missing.'
 Assert-Contains $skill '源代码摘录' '需求内容与实现证据边界缺失。'

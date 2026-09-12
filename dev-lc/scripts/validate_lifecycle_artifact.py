@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate DEV-SUITE-7.0 and 7.1 lifecycle-control JSON artifacts."""
+"""Validate DEV-SUITE-7.x and 8.0 lifecycle-control JSON artifacts."""
 
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Any
 
 
-SUPPORTED_PROTOCOLS = {"DEV-SUITE-7.0", "DEV-SUITE-7.1"}
+SUPPORTED_PROTOCOLS = {"DEV-SUITE-7.0", "DEV-SUITE-7.1", "DEV-SUITE-8.0"}
 COMMON = {
     "protocol_version", "id", "type", "change", "version", "status", "owner",
     "sources", "applies_to", "risks", "evidence", "updated_at",
@@ -42,6 +42,13 @@ RULES = {
         },
     },
 }
+ROUTE_NODE_FIELDS = {
+    "node_id", "stage", "skill", "applicability", "dependencies", "entry_conditions",
+    "expected_outputs", "stop_conditions",
+}
+ORCHESTRATION_ONLY_ROUTE_FIELDS = {
+    "agent", "parallel_groups", "attempt", "runtime_status", "work_item_id",
+}
 
 
 def _timestamp(value: Any) -> bool:
@@ -67,7 +74,7 @@ def validate_artifact(document: Any) -> list[str]:
     if missing:
         errors.append("missing required fields: " + ", ".join(missing))
     if document.get("protocol_version") not in SUPPORTED_PROTOCOLS:
-        errors.append("protocol_version must be one of: DEV-SUITE-7.0, DEV-SUITE-7.1")
+        errors.append("protocol_version must be one of: DEV-SUITE-7.0, DEV-SUITE-7.1, DEV-SUITE-8.0")
     artifact_id = document.get("id")
     if not isinstance(artifact_id, str) or not re.fullmatch(re.escape(rule["prefix"]) + r"(?:PENDING-)?[A-Za-z0-9][A-Za-z0-9._-]*", artifact_id):
         errors.append(f"id must be a non-empty {rule['prefix']} identifier")
@@ -97,6 +104,16 @@ def validate_artifact(document: Any) -> list[str]:
     if artifact_type == "handoff":
         if document.get("from") == document.get("to"):
             errors.append("handoff from and to must differ")
+        if document.get("protocol_version") == "DEV-SUITE-8.0" and document.get("status") == "Acknowledged":
+            acknowledgement = document.get("acknowledgement")
+            if (
+                not isinstance(acknowledgement, dict)
+                or not acknowledgement.get("acknowledged_by")
+                or not _timestamp(acknowledgement.get("acknowledged_at"))
+            ):
+                errors.append(
+                    "Acknowledged handoff requires acknowledgement.acknowledged_by and acknowledgement.acknowledged_at"
+                )
         if document.get("status") == "Accepted":
             acceptance = document.get("acceptance")
             if not isinstance(acceptance, dict) or not acceptance.get("accepted_by") or not _timestamp(acceptance.get("accepted_at")):
@@ -110,10 +127,163 @@ def validate_artifact(document: Any) -> list[str]:
                 or not _timestamp(rejection.get("rejected_at"))
             ):
                 errors.append("Rejected handoff requires rejection.reason, rejected_by and rejected_at")
+        if document.get("protocol_version") == "DEV-SUITE-8.0" and document.get("status") == "Superseded":
+            supersession = document.get("supersession")
+            if (
+                not isinstance(supersession, dict)
+                or not supersession.get("reason")
+                or not supersession.get("superseded_by")
+                or not _timestamp(supersession.get("superseded_at"))
+            ):
+                errors.append(
+                    "Superseded handoff requires supersession.reason, superseded_by and superseded_at"
+                )
 
     if artifact_type == "lifecycle-view":
         if not _non_empty(document.get("chg_ref")):
             errors.append("lifecycle-view requires non-empty chg_ref")
+        if document.get("protocol_version") == "DEV-SUITE-8.0" and "route" in document:
+            route = document.get("route")
+            if not isinstance(route, list):
+                errors.append("lifecycle-view route must be a list")
+            else:
+                route_nodes: dict[str, list[str]] = {}
+                route_details: dict[str, dict[str, Any]] = {}
+                for index, node in enumerate(route):
+                    if not isinstance(node, dict):
+                        errors.append(f"route[{index}] must be an object")
+                        continue
+                    missing_route_fields = sorted(ROUTE_NODE_FIELDS - node.keys())
+                    if missing_route_fields:
+                        errors.append(f"route[{index}] missing fields: {', '.join(missing_route_fields)}")
+                    forbidden_route_fields = sorted(ORCHESTRATION_ONLY_ROUTE_FIELDS & node.keys())
+                    if forbidden_route_fields:
+                        errors.append(f"route[{index}] contains orchestration-only fields: {', '.join(forbidden_route_fields)}")
+                    if node.get("applicability") not in {"Applicable", "NotApplicable"}:
+                        errors.append(f"route[{index}].applicability must be Applicable or NotApplicable")
+                    if node.get("applicability") == "NotApplicable" and not _non_empty(node.get("applicability_reason")):
+                        errors.append(f"route[{index}].applicability_reason is required when NotApplicable")
+                    if node.get("skill") == "dev-cr" and node.get("applicability") == "NotApplicable":
+                        decision = node.get("applicability_decision")
+                        if not isinstance(decision, dict):
+                            errors.append(
+                                f"route[{index}].applicability_decision is required for NotApplicable dev-cr"
+                            )
+                        else:
+                            if not isinstance(decision.get("owner"), str) or not decision["owner"].strip():
+                                errors.append(
+                                    f"route[{index}].applicability_decision.owner must be a non-empty string "
+                                    "for NotApplicable dev-cr"
+                                )
+                            for field in ("basis", "residual_risks", "invalidates_when"):
+                                value = decision.get(field)
+                                if not isinstance(value, list) or not value or any(
+                                    not isinstance(item, str) or not item.strip() for item in value
+                                ):
+                                    errors.append(
+                                        f"route[{index}].applicability_decision.{field} must be a non-empty "
+                                        "string list for NotApplicable dev-cr"
+                                    )
+                    node_id = node.get("node_id")
+                    if not isinstance(node_id, str) or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._:-]{0,127}", node_id):
+                        errors.append(f"route[{index}].node_id must be a non-empty stable identifier")
+                    elif node_id in route_nodes:
+                        errors.append(f"lifecycle-view route contains duplicate node_id: {node_id}")
+                    elif isinstance(node_id, str) and node_id:
+                        route_details[node_id] = node
+                    for field in ("dependencies", "entry_conditions", "expected_outputs", "stop_conditions"):
+                        if field in node and not isinstance(node[field], list):
+                            errors.append(f"route[{index}].{field} must be a list")
+                    dependencies = node.get("dependencies")
+                    if isinstance(node_id, str) and node_id and isinstance(dependencies, list):
+                        invalid_dependencies = [
+                            item for item in dependencies
+                            if not isinstance(item, str) or not item.strip()
+                        ]
+                        if invalid_dependencies:
+                            errors.append(f"route[{index}].dependencies must contain non-empty node_id references")
+                        else:
+                            route_nodes[node_id] = dependencies
+
+                known_nodes = set(route_nodes)
+                for node_id, dependencies in route_nodes.items():
+                    unknown = sorted(set(dependencies) - known_nodes)
+                    if unknown:
+                        errors.append(f"route node {node_id} references unknown dependencies: {', '.join(unknown)}")
+                    if node_id in dependencies:
+                        errors.append(f"route node {node_id} must not depend on itself")
+
+                visiting: set[str] = set()
+                visited: set[str] = set()
+
+                def has_cycle(node_id: str) -> bool:
+                    if node_id in visiting:
+                        return True
+                    if node_id in visited:
+                        return False
+                    visiting.add(node_id)
+                    for dependency in route_nodes.get(node_id, []):
+                        if dependency in route_nodes and has_cycle(dependency):
+                            return True
+                    visiting.remove(node_id)
+                    visited.add(node_id)
+                    return False
+
+                if any(has_cycle(node_id) for node_id in route_nodes if node_id not in visited):
+                    errors.append("lifecycle-view route dependencies must be acyclic")
+
+                def ancestors(node_id: str) -> set[str]:
+                    found: set[str] = set()
+                    pending = list(route_nodes.get(node_id, []))
+                    while pending:
+                        dependency = pending.pop()
+                        if dependency in found:
+                            continue
+                        found.add(dependency)
+                        pending.extend(route_nodes.get(dependency, []))
+                    return found
+
+                applicable_impls = {
+                    node_id for node_id, node in route_details.items()
+                    if node.get("skill") == "dev-impl" and node.get("applicability") == "Applicable"
+                }
+                review_nodes = {
+                    node_id for node_id, node in route_details.items()
+                    if node.get("skill") == "dev-cr"
+                }
+                applicable_reviews = {
+                    node_id for node_id in review_nodes
+                    if route_details[node_id].get("applicability") == "Applicable"
+                }
+
+                for node_id in applicable_impls:
+                    if route_details[node_id].get("stage") != "G4":
+                        errors.append(f"applicable dev-impl route node {node_id} must use stage G4")
+                    covering_reviews = [
+                        review_id for review_id in review_nodes
+                        if node_id in ancestors(review_id)
+                    ]
+                    if not covering_reviews:
+                        errors.append(
+                            f"applicable dev-impl route node {node_id} must lead to a dev-cr review node"
+                        )
+
+                for node_id in review_nodes:
+                    if route_details[node_id].get("stage") != "G4":
+                        errors.append(f"dev-cr route node {node_id} must use stage G4")
+
+                for node_id, node in route_details.items():
+                    if (
+                        node.get("skill") == "dev-val"
+                        and node.get("stage") == "G5"
+                        and node.get("applicability") == "Applicable"
+                    ):
+                        missing_reviews = sorted(applicable_reviews - ancestors(node_id))
+                        if missing_reviews:
+                            errors.append(
+                                f"applicable G5 dev-val route node {node_id} must depend on all applicable "
+                                f"dev-cr nodes: {', '.join(missing_reviews)}"
+                            )
 
     return errors
 

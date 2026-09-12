@@ -1,6 +1,6 @@
 ---
 name: dev-impl
-description: 依据已确认设计实施后端与集成变更，并提供可追踪构建证据。
+description: 依据已确认设计实施后端与集成变更，提供可追踪构建证据和人类可读实现交付摘要。
 disable-model-invocation: true
 ---
 

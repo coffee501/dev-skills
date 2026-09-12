@@ -45,11 +45,75 @@ test("MCP server initializes and exposes external-state tools", async () => {
     assert.equal(initialized.result.serverInfo.name, "dev-state");
     const listed = await server.request(2, "tools/list");
     const names = new Set(listed.result.tools.map((tool) => tool.name));
-    for (const name of ["workspace_resolve", "work_prepare", "promotion_prepare", "audit_list"]) assert.ok(names.has(name));
+    for (const name of [
+      "workspace_resolve", "change_get", "change_put", "work_prepare", "handoff_prepare", "handoff_get", "handoff_list", "handoff_acknowledge",
+      "work_get", "work_list", "agent_run_bind", "agent_run_list",
+      "handoff_accept", "handoff_reject", "handoff_supersede", "promotion_prepare", "audit_list",
+    ]) assert.ok(names.has(name));
     const resolved = await server.request(3, "tools/call", {
       name: "workspace_resolve", arguments: { project_path: resolve("."), display_name: "dev-skills" },
     });
     assert.ok(resolved.result.structuredContent.workspace_id.startsWith("WS-"));
+  } finally { await server.close(); }
+});
+
+test("MCP handoff lifecycle records acknowledgement and acceptance", async () => {
+  const server = startServer();
+  try {
+    const resolved = await server.request(1, "tools/call", {
+      name: "workspace_resolve", arguments: { project_path: resolve("."), display_name: "dev-skills" },
+    });
+    const common = {
+      workspace_id: resolved.result.structuredContent.workspace_id, change_id: "CHG-MCP", actor: "dev-orch", source: "test",
+    };
+    const prepared = await server.request(2, "tools/call", {
+      name: "handoff_prepare", arguments: {
+        ...common, handoff_id: "HOF-MCP", from: "dev-lld", to: "dev-impl", reason: "design ready",
+        inputs: ["DET-001@v1"], preserved_behavior: [], decisions: [], unresolved: [], invalidated: [],
+        expected_outputs: ["IMP"], entry_conditions: ["DET Baselined"], expected_version: 0,
+      },
+    });
+    assert.equal(prepared.result.structuredContent.status, "Prepared");
+    const acknowledged = await server.request(3, "tools/call", {
+      name: "handoff_acknowledge", arguments: {
+        ...common, handoff_id: "HOF-MCP", acknowledged_by: "implementation-owner", evidence: [], expected_version: 1,
+      },
+    });
+    assert.equal(acknowledged.result.structuredContent.status, "Acknowledged");
+    const accepted = await server.request(4, "tools/call", {
+      name: "handoff_accept", arguments: {
+        ...common, handoff_id: "HOF-MCP", accepted_by: "implementation-owner", reason: "inputs verified",
+        evidence: ["review-001"], expected_version: 2,
+      },
+    });
+    assert.equal(accepted.result.structuredContent.payload.acceptance.accepted_by, "implementation-owner");
+  } finally { await server.close(); }
+});
+
+test("MCP lifecycle views retain LCV identities across atomic replacement", async () => {
+  const server = startServer();
+  try {
+    const resolved = await server.request(1, "tools/call", {
+      name: "workspace_resolve", arguments: { project_path: resolve("."), display_name: "dev-skills" },
+    });
+    const common = {
+      workspace_id: resolved.result.structuredContent.workspace_id, change_id: "CHG-LCV", actor: "dev-lc", source: "test",
+    };
+    const first = await server.request(2, "tools/call", {
+      name: "lifecycle_put", arguments: {
+        ...common, lifecycle_id: "LCV-MCP-001", expected_version: 0, status: "Current", payload: { route_version: 1 },
+      },
+    });
+    assert.equal(first.result.structuredContent.object_id, "LCV-MCP-001");
+    const second = await server.request(3, "tools/call", {
+      name: "lifecycle_put", arguments: {
+        ...common, lifecycle_id: "LCV-MCP-002", expected_version: 0, status: "Current", payload: { route_version: 2 },
+        supersedes_lifecycle_id: "LCV-MCP-001", supersedes_expected_version: 1,
+      },
+    });
+    assert.equal(second.result.structuredContent.object_id, "LCV-MCP-002");
+    const current = await server.request(4, "tools/call", { name: "lifecycle_get", arguments: common });
+    assert.equal(current.result.structuredContent.object_id, "LCV-MCP-002");
   } finally { await server.close(); }
 });
 

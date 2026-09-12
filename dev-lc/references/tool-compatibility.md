@@ -30,11 +30,13 @@
 
 Claude Code 是当前调度 Agent 的首要运行平台。`.claude/agents/dev-orch.md` 同时作为项目级 Agent，并由插件清单
 注册为插件 Agent。推荐用 `claude --agent dev-orch` 启动为主会话调度器。作为子 Agent 时，可在宿主配置的派生深度内继续
-分派；当 `Agent` 工具不可用或达到深度/并发限制时退回只读路由。调度语义来自 `orchestration-protocol.md`，Agent 文件
+分派；当 `Agent` 工具不可用或达到深度/并发限制时退回基于LC路线的只读执行投影。调度语义来自 `orchestration-protocol.md`，Agent 文件
 不得复制共享生命周期协议。
 
-插件通过 `dev_state` MCP 提供外置状态能力。状态写入只允许使用 `mcp__dev_state__*`，不得向项目创建生命周期缓存目录。
-状态根目录优先使用 `DEV_SKILLS_STATE_HOME`，否则使用 Claude 的插件数据目录；MCP 不可用时 Agent 必须退回 route-only。
+插件通过 `dev_state` MCP 提供外置状态能力。每个适配器只能获得其职责所需的明确工具白名单；尤其调度 Agent 只能读取
+生命周期状态并写入 `WIT/AGENT_RUN`，不能获得生命周期、交接、失效、归档或晋升写工具。任何角色都不得向项目创建
+生命周期缓存目录。状态根目录优先使用 `DEV_SKILLS_STATE_HOME`，否则使用 Claude 的插件数据目录；MCP 不可用时 Agent
+必须退回 route-only。
 
 ## 调度 Agent 的 Codex 兼容
 

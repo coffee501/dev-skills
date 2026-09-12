@@ -1,6 +1,6 @@
 ---
 name: dev-orch
-description: 协调 Dev Skills 的多阶段后端与集成工作。
+description: 依据 dev-lc 确定的生命周期路线，调度并收敛跨多个 Dev Skills 的开发任务。
 argument-hint: "[change objective, scope, constraints, and available inputs]"
 disable-model-invocation: true
 context: fork
@@ -18,4 +18,4 @@ Resolve its relative references from `${CLAUDE_SKILL_DIR}/../../../dev-orch`; th
 If the task description is empty, return the exact invocation format and do not create or update lifecycle state:
 `/dev-skills:dev-orch <change objective, scope, constraints, and available inputs>`
 
-Otherwise, apply the canonical Skill plus the `dev-orch` Agent's Claude-specific tool and external-state mapping. Return the current route, state, blockers, responsibility boundaries, and next action; do not implement specialist work in the orchestrator.
+Otherwise, apply the canonical Skill plus the `dev-orch` Agent's Claude-specific tool and external-state mapping. Return the lifecycle route reference, execution projection, coordination state, blockers, responsibility boundaries, and next action. Do not alter lifecycle semantics; do not implement specialist work in the orchestrator.

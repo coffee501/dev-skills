@@ -44,8 +44,10 @@ class SkillContractTests(unittest.TestCase):
             "共享协议不可用",
             "不自动调用其他 Skill",
             "RUN/EVD/DEFECT/GATE",
-            "不等于风险接受、发布批准或生产稳定",
+            "不等于风险接受、外部交付批准或生产稳定",
             "ProductFailure/TestDefect/EnvironmentFailure",
+            "版本化验证结论记录",
+            "只读视图",
             "scripts/validate_artifact.py",
             "scripts/normalize_test_report.py",
         ]
@@ -95,6 +97,7 @@ class SkillContractTests(unittest.TestCase):
             "external-ci-evidence-import",
             "gate-with-expired-evidence",
             "negative-code-fix-request",
+            "complete-validation-produces-closure-gate",
         }
         self.assertEqual(set(cases), required)
         for case in cases.values():
@@ -127,6 +130,120 @@ class SkillContractTests(unittest.TestCase):
         errors = self.validator.validate_artifact(invalid)
         self.assertTrue(any("id must start" in error for error in errors))
         self.assertTrue(any("raw_locators" in error for error in errors))
+
+    def test_8_0_gate_requires_traceable_closure_fields(self) -> None:
+        gate = {
+            "protocol_version": "DEV-SUITE-8.0",
+            "id": "GATE-001",
+            "type": "validation-gate",
+            "change": "CHG-001",
+            "version": 1,
+            "status": "Pass",
+            "confirmation": "Suggested",
+            "confirmation_record": None,
+            "owner": "validation-owner",
+            "sources": ["VAL-001@v1", "RUN-001@v1", "EVD-001@v1"],
+            "applies_to": {"target": "abc123", "environment": "test"},
+            "rule_version": "policy-v1",
+            "validation_targets": ["VAL-001@v1"],
+            "run_refs": ["RUN-001@v1"],
+            "evidence_refs": ["EVD-001@v1"],
+            "defect_refs": [],
+            "target_results": [{
+                "target_ref": "VAL-001@v1",
+                "result": "Pass",
+                "evidence_refs": ["EVD-001@v1"],
+                "unmet_conditions": [],
+            }],
+            "execution_summary": {
+                "selected": 1, "executed": 1, "passed": 1, "failed": 0,
+                "blocked": 0, "skipped": 0, "not_run": 0,
+            },
+            "missing_or_expired": [],
+            "failures": [],
+            "quarantined_or_skipped": [],
+            "unverified_scope": [],
+            "risk_acceptances": [],
+            "reason": "all required targets have valid evidence",
+            "invalidation_conditions": [],
+            "revalidation_conditions": [],
+            "next_responsibility": "dev-lc",
+            "handoff_refs": [],
+            "risks": [],
+            "evidence": ["EVD-001@v1"],
+            "updated_at": "2026-09-12T12:00:00+08:00",
+        }
+        self.assertEqual(self.validator.validate_artifact(gate), [])
+
+        missing_run_refs = dict(gate)
+        missing_run_refs.pop("run_refs")
+        errors = self.validator.validate_artifact(missing_run_refs)
+        self.assertTrue(any("run_refs" in error for error in errors))
+
+        invalid_target = dict(gate)
+        invalid_target["target_results"] = [dict(gate["target_results"][0], result="Unknown")]
+        errors = self.validator.validate_artifact(invalid_target)
+        self.assertTrue(any("valid gate result" in error for error in errors))
+
+        incomplete_targets = dict(gate)
+        incomplete_targets["validation_targets"] = ["VAL-001@v1", "DVAL-001@v1"]
+        errors = self.validator.validate_artifact(incomplete_targets)
+        self.assertTrue(any("cover validation_targets exactly" in error for error in errors))
+
+        unproven_confirmation = dict(gate, confirmation="Confirmed")
+        errors = self.validator.validate_artifact(unproven_confirmation)
+        self.assertTrue(any("requires a confirmation_record" in error for error in errors))
+
+        confirmed = dict(
+            gate,
+            confirmation="Confirmed",
+            confirmation_record={
+                "confirmed_by": "quality-owner",
+                "confirmed_at": "2026-09-12T12:30:00+08:00",
+                "scope": ["VAL-001@v1", "candidate:abc123"],
+                "basis": ["AUTH-001@v1", "EVD-001@v1"],
+            },
+        )
+        self.assertEqual(self.validator.validate_artifact(confirmed), [])
+
+        malformed_confirmation = dict(
+            confirmed,
+            confirmation_record={
+                "confirmed_by": "quality-owner",
+                "confirmed_at": "yesterday",
+                "scope": [],
+                "basis": [""],
+            },
+        )
+        errors = self.validator.validate_artifact(malformed_confirmation)
+        self.assertTrue(any("confirmed_at" in error for error in errors))
+        self.assertTrue(any("scope" in error for error in errors))
+        self.assertTrue(any("basis" in error for error in errors))
+
+    def test_7_x_gate_contract_remains_compatible(self) -> None:
+        gate = {
+            "protocol_version": "DEV-SUITE-7.1",
+            "id": "GATE-LEGACY",
+            "type": "validation-gate",
+            "change": "CHG-001",
+            "version": 1,
+            "status": "Blocked",
+            "confirmation": "Suggested",
+            "owner": "validation-owner",
+            "sources": ["VAL-001@v1"],
+            "applies_to": {"target": "legacy", "environment": "test"},
+            "rule_version": "legacy-policy",
+            "validation_targets": ["VAL-001@v1"],
+            "evidence_refs": [],
+            "missing_or_expired": ["EVD-001"],
+            "failures": [],
+            "reason": "evidence missing",
+            "invalidation_conditions": [],
+            "risks": [],
+            "evidence": [],
+            "updated_at": "2026-09-12T12:00:00+08:00",
+        }
+        self.assertEqual(self.validator.validate_artifact(gate), [])
 
     def test_junit_normalizer_preserves_failure_and_skip(self) -> None:
         junit = """<testsuite name="sample" tests="3" failures="1" skipped="1">

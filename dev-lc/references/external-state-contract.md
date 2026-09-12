@@ -6,11 +6,15 @@
 
 以下内容只能进入项目外部状态库：
 
-- `CHG/HOF/LCV/WIT` 控制对象及其历史版本。
+- LC提供的 `CHG/HOF/LCV` 及其历史版本。
+- ORCH拥有的 `WIT` 及其尝试和运行状态。
 - Agent 运行身份、任务认领、尝试次数和阻塞原因。
-- 尚未确认的需求、设计、测试和发布草稿信封。
+- 尚未确认的需求、设计、测试和验证草稿信封。
 - 失效记录、临时验证结果、日志摘要和证据引用。
 - Promotion 准备和确认记录。
+
+语义所有权不因存储位置改变：`CHG/HOF/LCV` 由 `dev-lc` 或有权限责任方创建和版本化；`WIT` 由 `dev-orch`
+管理。ORCH只能保存LC提供的生命周期对象版本和引用，不得借助状态服务改写路线、门禁、交接接受或完成结论。
 
 状态根目录按以下优先级解析：
 
@@ -31,6 +35,18 @@
 devstate://workspace/{workspace_id}/change/{change_id}/{object_type}/{object_id}@v{version}
 ```
 
+## 生命周期对象操作
+
+- `change_get`、`lifecycle_get`、`handoff_get/handoff_list` 是不创建、不推进对象的控制面读取接口，供只读调度与恢复使用。
+- `change_get_or_create` 只复用或创建 `CHG`；后续使用 `change_put` 按 `Draft → Active → Completed/Cancelled/Superseded` 推进，并保留乐观版本控制。终态不得重新打开；归档只附加归档记录，不把状态改成协议外的 `Archived`。
+- `lifecycle_put` 必须使用正式 `LCV-*` 作为 `lifecycle_id`，只接受 `Current/Superseded`。创建后不得原地改写内容；产生后继视图时，以新 `lifecycle_id`、旧ID和旧版本在同一事务中把旧视图置为 `Superseded` 并创建新的 `Current`。输入失效时也只能将旧视图标记为 `Superseded`，不得写入 `Active/NeedsReview` 等其他对象的状态。
+- `handoff_prepare` 必须保存标准交接包的原因、输入、保留行为、决策、未决项、失效项、期望输出和进入条件；来源与目标必须不同。
+- `handoff_acknowledge` 是目标责任方可选的收件留痕，不是接受或拒绝的前置条件；目标责任方可从 `Prepared` 或
+  `Acknowledged` 直接调用 `handoff_accept/handoff_reject`，分别保存责任人、时间与证据。后继交接使用
+  `handoff_supersede`，不得把接受与拒绝共用一个含糊的决定字段。
+
+状态服务只执行结构、状态和并发边界；`Completed`、`Accepted` 等专业或治理结论仍由 `dev-lc` 校验其正式产物语义与授权证据。
+
 ## WIT 工作项
 
 工作项至少包含：
@@ -48,7 +64,9 @@ devstate://workspace/{workspace_id}/change/{change_id}/{object_type}/{object_id}
 | `status` | `Prepared/Running/Completed/Blocked/Failed/Cancelled` |
 | `expected_outputs` | 预期产物和证据 |
 
-`work_claim` 必须提供当前版本；`work_complete` 必须匹配认领 Agent 和输入指纹。冲突时返回最新对象，不覆盖其他 Agent 的更新。
+`work_get/work_list/agent_run_list` 提供中断后的当前任务和运行身份恢复读取。`work_claim` 必须提供当前版本；
+`agent_run_bind` 只允许绑定处于 `Running` 的 WIT，并且必须匹配认领 Agent 和输入指纹；`work_complete` 同样必须匹配
+认领 Agent 和输入指纹。冲突时返回最新对象，不覆盖其他 Agent 的更新。
 
 ## 并发与审计
 

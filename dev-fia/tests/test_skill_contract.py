@@ -20,7 +20,7 @@ def load(name: str, path: Path):
 
 def valid_fia(status: str = "ReadyForReview") -> dict:
     return {
-        "protocol_version": "DEV-SUITE-7.1",
+        "protocol_version": "DEV-SUITE-8.0",
         "id": "FIA-001",
         "type": "frontend-interface-alignment",
         "change": "CHG-001",

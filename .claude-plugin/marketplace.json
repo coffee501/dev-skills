@@ -3,13 +3,13 @@
   "owner": {
     "name": "Dev Skills Maintainers"
   },
-  "description": "面向 Claude Code 的后端与系统集成生命周期技能。",
+  "description": "面向 Claude Code 的后端与系统集成开发阶段技能。",
   "plugins": [
     {
       "name": "dev-skills",
       "source": "./",
-      "description": "后端与系统集成生命周期技能。",
-      "version": "7.5.0"
+      "description": "后端与系统集成开发阶段技能。",
+      "version": "8.0.2"
     }
   ]
 }

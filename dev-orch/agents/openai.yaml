@@ -1,7 +1,7 @@
 interface:
   display_name: "ORCH 生命周期调度"
-  short_description: "协调 Dev Skills 的多阶段后端与集成工作流程"
-  default_prompt: "Use $dev-orch to coordinate this multi-stage backend or integration change."
+  short_description: "依据LC路线调度并收敛跨多个Dev Skills的开发任务"
+  default_prompt: "Use $dev-orch to execute the current dev-lc lifecycle route through bounded specialist tasks."
 policy:
   products:
   - chatgpt

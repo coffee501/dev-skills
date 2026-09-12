@@ -1,6 +1,6 @@
 ---
 name: dev-lc
-description: 治理后端与集成变更的阶段路由、门禁、追踪和交接。
+description: 定义并评估后端与集成变更的生命周期状态、阶段适用性、门禁、追踪、失效和交接。
 disable-model-invocation: false
 ---
 

@@ -108,6 +108,20 @@
         "editing product or test code inside dev-val",
         "changing the expected result"
       ]
+    },
+    {
+      "id": "complete-validation-produces-closure-gate",
+      "mode": "full-validation",
+      "request": "Complete the approved G5 validation and provide the final test report for candidate abc123.",
+      "expected_invariants": [
+        "RUN EVD and applicable DEFECT records retain execution-level facts and evidence",
+        "a versioned GATE aggregates per-target results unverified scope residual risk and revalidation conditions",
+        "the human-readable report identifies its source GATE and remains a read-only view"
+      ],
+      "forbidden_outcomes": [
+        "creating a parallel authoritative test-report artifact",
+        "treating the validation conclusion as external delivery approval"
+      ]
     }
   ]
 }

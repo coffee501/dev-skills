@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate DEV-SUITE-7.1 frontend-interface-alignment artifacts."""
+"""Validate DEV-SUITE-7.1 and 8.0 frontend-interface-alignment artifacts."""
 
 from __future__ import annotations
 
@@ -11,7 +11,8 @@ from pathlib import Path
 from typing import Any
 
 
-PROTOCOL = "DEV-SUITE-7.1"
+PROTOCOL = "DEV-SUITE-8.0"
+SUPPORTED_PROTOCOLS = {"DEV-SUITE-7.1", "DEV-SUITE-8.0"}
 COMMON = {
     "protocol_version", "id", "type", "change", "version", "status", "owner",
     "sources", "applies_to", "risks", "evidence", "updated_at",
@@ -45,8 +46,8 @@ def validate_artifact(document: Any) -> list[str]:
     missing = sorted((COMMON | REQUIRED) - document.keys())
     if missing:
         errors.append("missing required fields: " + ", ".join(missing))
-    if document.get("protocol_version") != PROTOCOL:
-        errors.append(f"protocol_version must be {PROTOCOL}")
+    if document.get("protocol_version") not in SUPPORTED_PROTOCOLS:
+        errors.append("protocol_version must be one of: DEV-SUITE-7.1, DEV-SUITE-8.0")
     if document.get("type") != "frontend-interface-alignment":
         errors.append("type must be frontend-interface-alignment")
     artifact_id = document.get("id")

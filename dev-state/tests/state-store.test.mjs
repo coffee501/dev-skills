@@ -49,9 +49,12 @@ test("workspace, CHG, LCV and audit state stay external", () => {
     const change = fx.store.changeGetOrCreate({ ...fx.common, payload: { objective: "deliver" } });
     assert.equal(change.created, true);
     assert.equal(change.change.version, 1);
+    assert.equal(fx.store.changeGet(fx.common).object_id, "CHG-001");
     assert.match(change.change.state_uri, /^devstate:\/\/workspace\/WS-/);
 
-    const lcv = fx.store.lifecyclePut({ ...fx.common, expected_version: 0, status: "Active", payload: { route: ["dev-req"] } });
+    const lcv = fx.store.lifecyclePut({
+      ...fx.common, lifecycle_id: "LCV-001", expected_version: 0, status: "Current", payload: { route: ["dev-req"] },
+    });
     assert.equal(lcv.version, 1);
     assert.deepEqual(fx.store.lifecycleGet(fx.common).payload.route, ["dev-req"]);
     assert.equal(fx.store.auditList(fx.common).length, 2);
@@ -89,10 +92,78 @@ test("newer database schemas are never downgraded", () => {
 test("optimistic versions reject stale updates", () => {
   const fx = fixture();
   try {
-    fx.store.lifecyclePut({ ...fx.common, expected_version: 0, status: "Active", payload: {} });
+    fx.store.lifecyclePut({ ...fx.common, lifecycle_id: "LCV-001", expected_version: 0, status: "Current", payload: {} });
     assert.throws(
-      () => fx.store.lifecyclePut({ ...fx.common, expected_version: 0, status: "Active", payload: { stale: true } }),
+      () => fx.store.lifecyclePut({
+        ...fx.common, lifecycle_id: "LCV-001", expected_version: 0, status: "Superseded", payload: { stale: true },
+      }),
       (error) => error instanceof DevStateError && error.code === "VERSION_CONFLICT" && error.details.current.version === 1,
+    );
+  } finally { fx.close(); }
+});
+
+test("superseding an existing LCV cannot rewrite its snapshot payload", () => {
+  const fx = fixture();
+  try {
+    fx.store.lifecyclePut({
+      ...fx.common, lifecycle_id: "LCV-001", expected_version: 0, status: "Current", payload: { route_version: 1 },
+    });
+    const superseded = fx.store.lifecyclePut({
+      ...fx.common, lifecycle_id: "LCV-001", expected_version: 1, status: "Superseded", payload: { route_version: 999 },
+    });
+    assert.equal(superseded.status, "Superseded");
+    assert.deepEqual(superseded.payload, { route_version: 1 });
+  } finally { fx.close(); }
+});
+
+test("CHG and LCV reject statuses outside their lifecycle contracts", () => {
+  const fx = fixture();
+  try {
+    assert.throws(
+      () => fx.store.changeGetOrCreate({ ...fx.common, status: "Archived", payload: {} }),
+      (error) => error instanceof DevStateError && error.code === "INVALID_ARGUMENT",
+    );
+    assert.throws(
+      () => fx.store.lifecyclePut({
+        ...fx.common, lifecycle_id: "LCV-001", expected_version: 0, status: "Active", payload: {},
+      }),
+      (error) => error instanceof DevStateError && error.code === "INVALID_ARGUMENT",
+    );
+  } finally { fx.close(); }
+});
+
+test("LCV replacement preserves immutable identities and one Current view", () => {
+  const fx = fixture();
+  try {
+    const first = fx.store.lifecyclePut({
+      ...fx.common, lifecycle_id: "LCV-001", expected_version: 0, status: "Current", payload: { route_version: 1 },
+    });
+    const second = fx.store.lifecyclePut({
+      ...fx.common, lifecycle_id: "LCV-002", expected_version: 0, status: "Current", payload: { route_version: 2 },
+      supersedes_lifecycle_id: "LCV-001", supersedes_expected_version: first.version,
+    });
+    assert.equal(second.object_id, "LCV-002");
+    assert.equal(fx.store.lifecycleGet(fx.common).object_id, "LCV-002");
+    const old = fx.store.getObject({ ...fx.common, object_type: "LCV", object_id: "LCV-001" });
+    assert.equal(old.status, "Superseded");
+    assert.equal(old.payload.superseded_by, "LCV-002@v1");
+    assert.deepEqual(second.payload.supersedes, [first.state_uri]);
+  } finally { fx.close(); }
+});
+
+test("CHG transitions follow the lifecycle and reject reopening a terminal change", () => {
+  const fx = fixture();
+  try {
+    const draft = fx.store.changeGetOrCreate({ ...fx.common, payload: { objective: "deliver" } }).change;
+    const active = fx.store.changePut({ ...fx.common, expected_version: draft.version, status: "Active", payload: draft.payload });
+    const completed = fx.store.changePut({
+      ...fx.common, expected_version: active.version, status: "Completed",
+      payload: { ...active.payload, completion: { confirmed_by: "project-owner" } },
+    });
+    assert.equal(completed.status, "Completed");
+    assert.throws(
+      () => fx.store.changePut({ ...fx.common, expected_version: completed.version, status: "Active", payload: completed.payload }),
+      (error) => error instanceof DevStateError && error.code === "INVALID_TRANSITION",
     );
   } finally { fx.close(); }
 });
@@ -123,23 +194,149 @@ test("WIT claim and completion enforce agent and input identity", () => {
   } finally { fx.close(); }
 });
 
+test("durable recovery can read WIT and validated Agent run bindings", () => {
+  const fx = fixture();
+  try {
+    fx.store.workPrepare({
+      ...fx.common, work_item_id: "WIT-RECOVER", skill: "dev-cr", input_versions: ["IMP-001@v1"],
+      expected_version: 0, owned_paths: [], owned_artifacts: ["REV-001"], expected_outputs: ["REV"],
+    });
+    const running = fx.store.workClaim({
+      ...fx.common, work_item_id: "WIT-RECOVER", agent_id: "review-agent", expected_version: 1,
+    });
+    assert.throws(
+      () => fx.store.agentRunBind({
+        ...fx.common, run_id: "RUN-BAD", work_item_id: "WIT-RECOVER", agent_id: "other-agent",
+        input_fingerprint: running.payload.input_fingerprint, expected_version: 0,
+      }),
+      (error) => error instanceof DevStateError && error.code === "AGENT_MISMATCH",
+    );
+    const bound = fx.store.agentRunBind({
+      ...fx.common, run_id: "RUN-RECOVER", work_item_id: "WIT-RECOVER", agent_id: "review-agent",
+      input_fingerprint: running.payload.input_fingerprint, expected_version: 0, details: { host: "local" },
+    });
+    assert.equal(bound.payload.work_item_id, "WIT-RECOVER");
+    assert.equal(fx.store.workGet({ ...fx.common, work_item_id: "WIT-RECOVER" }).status, "Running");
+    assert.deepEqual(fx.store.workList({ ...fx.common, status: "Running" }).map((item) => item.object_id), ["WIT-RECOVER"]);
+    assert.deepEqual(
+      fx.store.agentRunList({ ...fx.common, work_item_id: "WIT-RECOVER" }).map((item) => item.object_id),
+      ["RUN-RECOVER"],
+    );
+  } finally { fx.close(); }
+});
+
 test("invalidation updates targets atomically", () => {
   const fx = fixture();
   try {
-    fx.store.lifecyclePut({ ...fx.common, expected_version: 0, status: "Active", payload: { route: [] } });
+    fx.store.lifecyclePut({ ...fx.common, lifecycle_id: "LCV-001", expected_version: 0, status: "Current", payload: { route: [] } });
     fx.store.artifactPut({
       ...fx.common, artifact_id: "DET-001", artifact_type: "DET", expected_version: 0, status: "Accepted", payload: {},
     });
     const result = fx.store.applyInvalidation({
       ...fx.common, invalidation_id: "INV-001", expected_version: 0, reason: "REQ changed",
       targets: [
-        { object_type: "LCV", object_id: "LCV", expected_version: 1, new_status: "NeedsReview", reason: "route changed" },
+        { object_type: "LCV", object_id: "LCV-001", expected_version: 1, new_status: "Superseded", reason: "route changed" },
         { object_type: "ARTIFACT", object_id: "DET-001", expected_version: 1, new_status: "Expired", reason: "input changed" },
       ],
     });
-    assert.equal(result.targets[0].status, "NeedsReview");
+    assert.equal(result.targets[0].status, "Superseded");
     assert.equal(result.targets[1].status, "Expired");
     assert.equal(result.invalidation.status, "Applied");
+  } finally { fx.close(); }
+});
+
+test("invalidation cannot bypass lifecycle status contracts", () => {
+  const fx = fixture();
+  try {
+    fx.store.lifecyclePut({ ...fx.common, lifecycle_id: "LCV-001", expected_version: 0, status: "Current", payload: {} });
+    assert.throws(
+      () => fx.store.applyInvalidation({
+        ...fx.common, invalidation_id: "INV-INVALID", expected_version: 0, reason: "bad route",
+        targets: [{ object_type: "LCV", object_id: "LCV-001", expected_version: 1, new_status: "NeedsReview", reason: "invalid" }],
+      }),
+      (error) => error instanceof DevStateError && error.code === "INVALID_ARGUMENT",
+    );
+    assert.equal(fx.store.lifecycleGet(fx.common).version, 1);
+    assert.equal(fx.store.lifecycleGet(fx.common).status, "Current");
+  } finally { fx.close(); }
+});
+
+function prepareHandoff(fx, handoffId = "HOF-001") {
+  return fx.store.handoffPrepare({
+    ...fx.common, handoff_id: handoffId, from: "dev-lld", to: "dev-impl", reason: "design ready",
+    inputs: ["DET-001@v1"], preserved_behavior: ["existing API remains compatible"], decisions: ["DDEC-001@v1"],
+    unresolved: [], invalidated: [], expected_outputs: ["IMP"], entry_conditions: ["DET Baselined"], expected_version: 0,
+  });
+}
+
+test("HOF acknowledgement and acceptance preserve distinct decision evidence", () => {
+  const fx = fixture();
+  try {
+    const prepared = prepareHandoff(fx);
+    assert.equal(prepared.status, "Prepared");
+    assert.equal(prepared.payload.reason, "design ready");
+    assert.deepEqual(prepared.payload.entry_conditions, ["DET Baselined"]);
+    assert.equal(fx.store.handoffGet({ ...fx.common, handoff_id: "HOF-001" }).status, "Prepared");
+    assert.deepEqual(fx.store.handoffList({ ...fx.common, status: "Prepared" }).map((item) => item.object_id), ["HOF-001"]);
+
+    const acknowledged = fx.store.handoffAcknowledge({
+      ...fx.common, handoff_id: "HOF-001", acknowledged_by: "implementation-owner", evidence: ["ack-001"], expected_version: 1,
+    });
+    assert.equal(acknowledged.status, "Acknowledged");
+    assert.equal(acknowledged.payload.acknowledgement.acknowledged_by, "implementation-owner");
+
+    const accepted = fx.store.handoffTransition({
+      ...fx.common, handoff_id: "HOF-001", accepted_by: "implementation-owner", reason: "inputs verified",
+      evidence: ["review-001"], expected_version: 2,
+    }, "Accepted");
+    assert.equal(accepted.status, "Accepted");
+    assert.equal(accepted.payload.acceptance.accepted_by, "implementation-owner");
+    assert.equal(accepted.payload.acceptance.accepted_at, "2026-08-20T00:00:00.000Z");
+    assert.equal(accepted.payload.rejection, undefined);
+  } finally { fx.close(); }
+});
+
+test("HOF rejection and supersession use their own traceable records", () => {
+  const fx = fixture();
+  try {
+    prepareHandoff(fx, "HOF-REJECT");
+    const rejected = fx.store.handoffTransition({
+      ...fx.common, handoff_id: "HOF-REJECT", rejected_by: "implementation-owner", reason: "input version stale",
+      evidence: ["diff-001"], expected_version: 1,
+    }, "Rejected");
+    assert.equal(rejected.payload.rejection.rejected_by, "implementation-owner");
+    assert.equal(rejected.payload.acceptance, undefined);
+
+    const superseded = fx.store.handoffSupersede({
+      ...fx.common, handoff_id: "HOF-REJECT", superseded_by: "lifecycle-owner", reason: "replacement HOF-002",
+      evidence: ["HOF-002@v1"], expected_version: 2,
+    });
+    assert.equal(superseded.status, "Superseded");
+    assert.equal(superseded.payload.supersession.superseded_by, "lifecycle-owner");
+  } finally { fx.close(); }
+});
+
+test("CHG archival preserves terminal lifecycle status and rejects active changes", () => {
+  const fx = fixture();
+  try {
+    fx.store.changeGetOrCreate({ ...fx.common, status: "Active", payload: {} });
+    assert.throws(
+      () => fx.store.archiveChange({ ...fx.common, archived_by: "lifecycle-owner", reason: "premature", expected_version: 1 }),
+      (error) => error instanceof DevStateError && error.code === "INVALID_TRANSITION",
+    );
+
+    const terminalCommon = { ...fx.common, change_id: "CHG-TERMINAL" };
+    const terminalDraft = fx.store.changeGetOrCreate({ ...terminalCommon, payload: {} }).change;
+    const terminalActive = fx.store.changePut({ ...terminalCommon, status: "Active", payload: {}, expected_version: terminalDraft.version });
+    fx.store.changePut({
+      ...terminalCommon, status: "Completed", payload: { completion: { confirmed_by: "owner" } }, expected_version: terminalActive.version,
+    });
+    const archived = fx.store.archiveChange({
+      ...terminalCommon, archived_by: "lifecycle-owner", reason: "retention policy", expected_version: 3,
+    });
+    assert.equal(archived.status, "Completed");
+    assert.equal(archived.payload.archival.archived_by, "lifecycle-owner");
+    assert.equal(archived.payload.archival.reason, "retention policy");
   } finally { fx.close(); }
 });
 

@@ -3,9 +3,9 @@
   "cases": [
     {
       "id": "brownfield-feature-change",
-      "route": ["dev-ctx", "dev-req", "dev-hld", "dev-lld", "dev-test", "dev-impl", "dev-cr", "dev-val", "dev-rel", "dev-ops"],
-      "required_artifacts": ["CTX", "REQ", "AC", "DEC", "DET", "TC", "IMP", "BUILD", "REV", "RUN", "EVD", "GATE", "REL", "DEP", "OBS", "RUNBOOK"],
-      "invariants": ["As-Is does not become To-Be without confirmation", "implementation and test design can progress in parallel", "REV Approved precedes formal G5 Pass"]
+      "route": ["dev-ctx", "dev-req", "dev-test", "dev-hld", "dev-lld", "dev-impl", "dev-cr", "dev-val"],
+      "required_artifacts": ["CTX", "REQ", "AC", "DEC", "DET", "TC", "IMP", "BUILD", "REV", "RUN", "EVD", "GATE"],
+      "invariants": ["As-Is does not become To-Be without confirmation", "test design begins from the G1 requirement baseline and is refined by design", "implementation and test design can progress in parallel", "applicable product and test-automation implementations are reviewed before formal G5 Pass"]
     },
     {
       "id": "low-risk-defect-fix",
@@ -15,27 +15,21 @@
     },
     {
       "id": "high-risk-data-migration",
-      "route": ["dev-req", "dev-hld", "dev-lld", "dev-test", "dev-impl", "dev-cr", "dev-val", "dev-rel", "dev-ops"],
-      "required_artifacts": ["MIG", "DVAL", "TC", "IMP", "BUILD", "REV", "EVD", "GATE", "MIGRUN", "OBS", "RUNBOOK"],
-      "invariants": ["migration implementation is separate from migration execution", "irreversible change requires forward recovery and validation"]
+      "route": ["dev-req", "dev-test", "dev-hld", "dev-lld", "dev-impl", "dev-cr", "dev-val"],
+      "required_artifacts": ["MIG", "DVAL", "TC", "IMP", "BUILD", "REV", "EVD", "GATE"],
+      "invariants": ["migration design and code are verified without executing production migration", "external execution prerequisites and recovery constraints remain explicit"]
     },
     {
       "id": "test-automation-loop",
       "route": ["dev-test", "dev-impl", "dev-cr", "dev-val"],
       "required_artifacts": ["TC", "AUT", "IMP", "BUILD", "REV", "RUN", "EVD"],
-      "invariants": ["AUT specification and automation code have separate ownership", "review can be N/A only under explicit project policy"]
+      "invariants": ["AUT specification and automation code have separate ownership", "required automation reaches G5 only through AUT Ready plus implemented built and reviewed test code", "manual execution or review N/A requires explicit project policy and residual-risk records"]
     },
     {
-      "id": "healthy-release-to-operations",
-      "route": ["dev-rel", "dev-ops"],
-      "required_artifacts": ["REL", "DEP", "OBS", "RUNBOOK"],
-      "invariants": ["healthy release does not create an incident", "release completion does not prove long-term stability"]
-    },
-    {
-      "id": "incident-feedback-loop",
-      "route": ["dev-ops", "dev-req", "dev-hld", "dev-lld", "dev-test", "dev-impl", "dev-cr", "dev-val", "dev-rel"],
-      "required_artifacts": ["INC", "RCA", "CAPA", "IMP", "REV", "EVD", "REL"],
-      "invariants": ["recovery is not incident closure", "RCA and CAPA invalidate affected upstream and downstream artifacts"]
+      "id": "validation-failure-feedback-loop",
+      "route": ["dev-val", "dev-test", "dev-impl", "dev-cr", "dev-val"],
+      "required_artifacts": ["RUN", "EVD", "DEFECT", "TC", "IMP", "REV", "GATE"],
+      "invariants": ["failure classification determines the responsible development stage", "revalidation uses the corrected implementation and current test baseline"]
     },
     {
       "id": "handoff-rejection-and-rework",

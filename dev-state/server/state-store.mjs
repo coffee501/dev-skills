@@ -9,6 +9,17 @@ const SCHEMA_VERSION = 1;
 const ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/;
 const WORKSPACE_PATTERN = /^WS-[A-F0-9]{12}$/;
 const WORK_TERMINAL = new Set(["Completed", "Blocked", "Failed", "Cancelled"]);
+const CHANGE_STATUSES = new Set(["Draft", "Active", "Completed", "Cancelled", "Superseded"]);
+const CHANGE_ARCHIVABLE = new Set(["Completed", "Cancelled", "Superseded"]);
+const CHANGE_TRANSITIONS = new Map([
+  ["Draft", new Set(["Draft", "Active", "Cancelled", "Superseded"])],
+  ["Active", new Set(["Active", "Completed", "Cancelled", "Superseded"])],
+  ["Completed", new Set(["Completed", "Superseded"])],
+  ["Cancelled", new Set(["Cancelled", "Superseded"])],
+  ["Superseded", new Set(["Superseded"])],
+]);
+const LIFECYCLE_STATUSES = new Set(["Current", "Superseded"]);
+const HANDOFF_STATUSES = new Set(["Prepared", "Acknowledged", "Accepted", "Rejected", "Superseded"]);
 
 export class DevStateError extends Error {
   constructor(code, message, details = undefined) {
@@ -39,6 +50,14 @@ function requireVersion(value, label = "expected_version") {
     throw new DevStateError("INVALID_ARGUMENT", `${label} must be a non-negative integer`);
   }
   return value;
+}
+
+function requireStatus(value, allowed, label = "status") {
+  const normalized = requireString(value, label);
+  if (!allowed.has(normalized)) {
+    throw new DevStateError("INVALID_ARGUMENT", `${label} must be one of: ${[...allowed].join(", ")}`);
+  }
+  return normalized;
 }
 
 function arrayOrEmpty(value, label) {
@@ -369,19 +388,88 @@ export class StateStore {
   changeGetOrCreate(input) {
     const existing = this.getObject({ ...input, object_type: "CHG", object_id: input.change_id });
     if (existing) return { created: false, change: existing };
+    const status = requireStatus(input.status || "Draft", CHANGE_STATUSES);
     const change = this.putObject({
       ...input, object_type: "CHG", object_id: input.change_id, expected_version: 0,
-      status: input.status || "Draft", payload: objectOrEmpty(input.payload, "payload"),
+      status, payload: objectOrEmpty(input.payload, "payload"),
     });
     return { created: true, change };
   }
 
+  changeGet(input) {
+    return this.getObject({ ...input, object_type: "CHG", object_id: input.change_id });
+  }
+
+  changePut(input) {
+    const current = this.#requireObject(input, "CHG", input.change_id);
+    const status = requireStatus(input.status, CHANGE_STATUSES);
+    if (!CHANGE_TRANSITIONS.get(current.status)?.has(status)) {
+      throw new DevStateError("INVALID_TRANSITION", `cannot move change from ${current.status} to ${status}`);
+    }
+    return this.putObject({
+      ...input, object_type: "CHG", object_id: input.change_id, status,
+      payload: objectOrEmpty(input.payload, "payload"),
+    });
+  }
+
   lifecycleGet(input) {
-    return this.getObject({ ...input, object_type: "LCV", object_id: "LCV" });
+    const current = this.listObjects({ ...input, object_type: "LCV", status: "Current", limit: 2 });
+    if (current.length > 1) {
+      throw new DevStateError("CONFLICT", "multiple Current lifecycle views exist");
+    }
+    return current[0] || null;
   }
 
   lifecyclePut(input) {
-    return this.putObject({ ...input, object_type: "LCV", object_id: "LCV" });
+    const lifecycleId = requireId(input.lifecycle_id, "lifecycle_id");
+    if (!lifecycleId.startsWith("LCV-")) {
+      throw new DevStateError("INVALID_ARGUMENT", "lifecycle_id must start with LCV-");
+    }
+    const status = requireStatus(input.status, LIFECYCLE_STATUSES);
+    const existing = this.getObject({ ...input, object_type: "LCV", object_id: lifecycleId });
+    if (existing) {
+      if (existing.status !== "Current" || status !== "Superseded") {
+        throw new DevStateError("INVALID_TRANSITION", "an existing lifecycle view is immutable except for Current to Superseded");
+      }
+      return this.putObject({
+        ...input, object_type: "LCV", object_id: lifecycleId, status, payload: existing.payload,
+      });
+    }
+    if (status !== "Current") {
+      throw new DevStateError("INVALID_TRANSITION", "a new lifecycle view must start as Current");
+    }
+
+    return this.#transaction(() => {
+      const current = this.listObjects({ ...input, object_type: "LCV", status: "Current", limit: 2 });
+      if (current.length > 1) {
+        throw new DevStateError("CONFLICT", "multiple Current lifecycle views exist");
+      }
+      const payload = objectOrEmpty(input.payload, "payload");
+      if (current.length === 0) {
+        if (input.supersedes_lifecycle_id !== undefined || input.supersedes_expected_version !== undefined) {
+          throw new DevStateError("INVALID_ARGUMENT", "supersedes fields require a current lifecycle view");
+        }
+        return this.#putObjectInTransaction({
+          ...input, object_type: "LCV", object_id: lifecycleId, status, payload,
+        });
+      }
+
+      const previous = current[0];
+      const supersedesId = requireId(input.supersedes_lifecycle_id, "supersedes_lifecycle_id");
+      const supersedesVersion = requireVersion(input.supersedes_expected_version, "supersedes_expected_version");
+      if (supersedesId !== previous.object_id || supersedesVersion !== previous.version) {
+        throw new DevStateError("VERSION_CONFLICT", "supersedes lifecycle identity or version is stale", { current: previous });
+      }
+      this.#putObjectInTransaction({
+        ...input, object_type: "LCV", object_id: previous.object_id,
+        expected_version: previous.version, status: "Superseded",
+        payload: { ...previous.payload, superseded_by: `${lifecycleId}@v1` },
+      });
+      return this.#putObjectInTransaction({
+        ...input, object_type: "LCV", object_id: lifecycleId, expected_version: 0, status: "Current",
+        payload: { ...payload, supersedes: [previous.state_uri] },
+      });
+    });
   }
 
   artifactPut(input) {
@@ -415,6 +503,14 @@ export class StateStore {
       ...input, object_type: "WIT", object_id: requireId(input.work_item_id, "work_item_id"),
       status: "Prepared", payload,
     });
+  }
+
+  workGet(input) {
+    return this.getObject({ ...input, object_type: "WIT", object_id: input.work_item_id });
+  }
+
+  workList(input) {
+    return this.listObjects({ ...input, object_type: "WIT" });
   }
 
   workClaim(input) {
@@ -453,44 +549,130 @@ export class StateStore {
   }
 
   agentRunBind(input) {
+    const workItem = this.#requireObject(input, "WIT", input.work_item_id);
+    if (workItem.status !== "Running") {
+      throw new DevStateError("INVALID_TRANSITION", `cannot bind agent run to work item in ${workItem.status}`);
+    }
+    const agentId = requireString(input.agent_id, "agent_id");
+    if (workItem.payload.agent_id !== agentId) {
+      throw new DevStateError("AGENT_MISMATCH", "agent_id does not own this work item");
+    }
+    const inputFingerprint = requireString(input.input_fingerprint, "input_fingerprint");
+    if (workItem.payload.input_fingerprint !== inputFingerprint) {
+      throw new DevStateError("STALE_INPUT", "agent run input fingerprint does not match current work item");
+    }
     return this.putObject({
       ...input, object_type: "AGENT_RUN", object_id: requireId(input.run_id || `RUN-${randomUUID()}`, "run_id"),
       status: input.status || "Running",
       payload: {
-        agent_id: requireString(input.agent_id, "agent_id"),
+        agent_id: agentId,
         work_item_id: requireId(input.work_item_id, "work_item_id"),
-        input_fingerprint: requireString(input.input_fingerprint, "input_fingerprint"),
+        input_fingerprint: inputFingerprint,
         details: objectOrEmpty(input.details, "details"),
       },
     });
   }
 
+  agentRunList(input) {
+    const rows = this.listObjects({ ...input, object_type: "AGENT_RUN" });
+    const workItemId = input.work_item_id === undefined ? null : requireId(input.work_item_id, "work_item_id");
+    const agentId = input.agent_id === undefined ? null : requireString(input.agent_id, "agent_id");
+    return rows.filter((item) => (
+      (workItemId === null || item.payload.work_item_id === workItemId)
+      && (agentId === null || item.payload.agent_id === agentId)
+    ));
+  }
+
   handoffPrepare(input) {
+    const from = requireId(input.from, "from");
+    const to = requireId(input.to, "to");
+    if (from === to) throw new DevStateError("INVALID_ARGUMENT", "handoff from and to must differ");
     return this.putObject({
       ...input, object_type: "HOF", object_id: requireId(input.handoff_id, "handoff_id"), status: "Prepared",
       payload: {
-        from: requireId(input.from, "from"),
-        to: requireId(input.to, "to"),
+        from,
+        to,
+        reason: requireString(input.reason, "reason"),
         inputs: arrayOrEmpty(input.inputs, "inputs"),
-        expected_outputs: arrayOrEmpty(input.expected_outputs, "expected_outputs"),
-        unresolved: arrayOrEmpty(input.unresolved, "unresolved"),
         preserved_behavior: arrayOrEmpty(input.preserved_behavior, "preserved_behavior"),
+        decisions: arrayOrEmpty(input.decisions, "decisions"),
+        unresolved: arrayOrEmpty(input.unresolved, "unresolved"),
+        invalidated: arrayOrEmpty(input.invalidated, "invalidated"),
+        expected_outputs: arrayOrEmpty(input.expected_outputs, "expected_outputs"),
+        entry_conditions: arrayOrEmpty(input.entry_conditions, "entry_conditions"),
+      },
+    });
+  }
+
+  handoffGet(input) {
+    return this.getObject({ ...input, object_type: "HOF", object_id: input.handoff_id });
+  }
+
+  handoffList(input) {
+    return this.listObjects({ ...input, object_type: "HOF" });
+  }
+
+  handoffAcknowledge(input) {
+    const current = this.#requireObject(input, "HOF", input.handoff_id);
+    if (current.status !== "Prepared") {
+      throw new DevStateError("INVALID_TRANSITION", `cannot acknowledge handoff in ${current.status}`);
+    }
+    return this.putObject({
+      ...input, object_type: "HOF", object_id: input.handoff_id, status: "Acknowledged",
+      payload: {
+        ...current.payload,
+        acknowledgement: {
+          acknowledged_by: requireString(input.acknowledged_by, "acknowledged_by"),
+          acknowledged_at: this.clock(),
+          evidence: arrayOrEmpty(input.evidence, "evidence"),
+        },
       },
     });
   }
 
   handoffTransition(input, status) {
+    requireStatus(status, new Set(["Accepted", "Rejected"]));
     const current = this.#requireObject(input, "HOF", input.handoff_id);
-    if (current.status !== "Prepared") throw new DevStateError("INVALID_TRANSITION", `cannot ${status.toLowerCase()} handoff in ${current.status}`);
-    const acceptance = {
-      decided_by: requireString(input.decided_by, "decided_by"),
-      decided_at: this.clock(),
+    if (!new Set(["Prepared", "Acknowledged"]).has(current.status)) {
+      throw new DevStateError("INVALID_TRANSITION", `cannot ${status.toLowerCase()} handoff in ${current.status}`);
+    }
+    const decisionEvidence = {
       reason: requireString(input.reason, "reason"),
       evidence: arrayOrEmpty(input.evidence, "evidence"),
     };
+    const decision = status === "Accepted"
+      ? {
+        accepted_by: requireString(input.accepted_by, "accepted_by"),
+        accepted_at: this.clock(),
+        ...decisionEvidence,
+      }
+      : {
+        rejected_by: requireString(input.rejected_by, "rejected_by"),
+        rejected_at: this.clock(),
+        ...decisionEvidence,
+      };
     return this.putObject({
       ...input, object_type: "HOF", object_id: input.handoff_id, status,
-      payload: { ...current.payload, acceptance },
+      payload: { ...current.payload, [status === "Accepted" ? "acceptance" : "rejection"]: decision },
+    });
+  }
+
+  handoffSupersede(input) {
+    const current = this.#requireObject(input, "HOF", input.handoff_id);
+    if (current.status === "Superseded") {
+      throw new DevStateError("INVALID_TRANSITION", "handoff is already superseded");
+    }
+    return this.putObject({
+      ...input, object_type: "HOF", object_id: input.handoff_id, status: "Superseded",
+      payload: {
+        ...current.payload,
+        supersession: {
+          superseded_by: requireString(input.superseded_by, "superseded_by"),
+          superseded_at: this.clock(),
+          reason: requireString(input.reason, "reason"),
+          evidence: arrayOrEmpty(input.evidence, "evidence"),
+        },
+      },
     });
   }
 
@@ -501,12 +683,18 @@ export class StateStore {
       const invalidationId = requireId(input.invalidation_id, "invalidation_id");
       const changed = targets.map((target) => {
         const current = this.#requireObject(input, target.object_type, target.object_id);
+        const objectType = requireId(target.object_type, "target.object_type").toUpperCase();
+        const requestedStatus = requireString(target.new_status, "target.new_status");
+        const allowed = objectType === "CHG" ? CHANGE_STATUSES
+          : objectType === "LCV" ? LIFECYCLE_STATUSES
+            : objectType === "HOF" ? HANDOFF_STATUSES : null;
+        const newStatus = allowed ? requireStatus(requestedStatus, allowed, "target.new_status") : requestedStatus;
         return this.#putObjectInTransaction({
           ...input,
-          object_type: target.object_type,
+          object_type: objectType,
           object_id: target.object_id,
           expected_version: requireVersion(target.expected_version, "target.expected_version"),
-          status: requireString(target.new_status, "target.new_status"),
+          status: newStatus,
           payload: {
             ...current.payload,
             invalidated_by: invalidationId,
@@ -562,9 +750,19 @@ export class StateStore {
 
   archiveChange(input) {
     const current = this.#requireObject(input, "CHG", input.change_id);
+    if (!CHANGE_ARCHIVABLE.has(current.status)) {
+      throw new DevStateError("INVALID_TRANSITION", `cannot archive change in ${current.status}`);
+    }
     return this.putObject({
-      ...input, object_type: "CHG", object_id: input.change_id, status: "Archived",
-      payload: { ...current.payload, archived_by: requireString(input.archived_by, "archived_by"), archived_at: this.clock(), archive_reason: requireString(input.reason, "reason") },
+      ...input, object_type: "CHG", object_id: input.change_id, status: current.status,
+      payload: {
+        ...current.payload,
+        archival: {
+          archived_by: requireString(input.archived_by, "archived_by"),
+          archived_at: this.clock(),
+          reason: requireString(input.reason, "reason"),
+        },
+      },
     });
   }
 
