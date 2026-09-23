@@ -2,8 +2,6 @@ interface:
   display_name: "CR 实现审查"
   short_description: "审查实际实现的正确性、完整性、设计符合性和工程风险"
   default_prompt: "Use $dev-cr to independently review the actual backend or integration implementation for correctness, completeness, design conformance, and engineering risk."
-  icon_small: "./assets/icon.svg"
-  icon_large: "./assets/icon.svg"
 policy:
   products:
   - chatgpt

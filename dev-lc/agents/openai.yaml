@@ -2,8 +2,6 @@ interface:
   display_name: "LC 生命周期治理"
   short_description: "评估后端与集成变更的生命周期状态、门禁、追踪和交接"
   default_prompt: "Use $dev-lc to evaluate lifecycle applicability, gates, traceability, invalidation, and handoffs for this backend change."
-  icon_small: "./assets/icon.svg"
-  icon_large: "./assets/icon.svg"
 policy:
   products:
   - chatgpt
