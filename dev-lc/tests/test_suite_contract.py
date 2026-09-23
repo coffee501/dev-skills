@@ -293,12 +293,15 @@ class SuiteContractTests(unittest.TestCase):
         artifact = (LC_ROOT / "references" / "artifact-contract.md").read_text(encoding="utf-8")
         validation_skill = (SUITE_ROOT / "dev-val" / "SKILL.md").read_text(encoding="utf-8")
         output_contract = (SUITE_ROOT / "dev-val" / "references" / "output-contracts.md").read_text(encoding="utf-8")
+        outline = (SUITE_ROOT / "dev-val" / "references" / "outline.md").read_text(encoding="utf-8")
 
         self.assertIn("闭环 `GATE`", readme)
         self.assertIn("`GATE` 是G5的版本化验证结论记录", lifecycle)
         self.assertIn("闭环验证结论 `GATE`", artifact)
         self.assertIn("无独立状态的只读视图", validation_skill)
-        self.assertIn("验证摘要是无独立状态的只读投影视图", output_contract)
+        self.assertIn("无独立状态的只读视图", outline)
+        self.assertIn("protocol_version", output_contract)
+        self.assertNotIn("protocol_version", outline)
         self.assertNotIn("type: validation-report", output_contract)
 
     def test_implementation_delivery_summary_is_a_read_only_projection(self) -> None:
@@ -306,17 +309,19 @@ class SuiteContractTests(unittest.TestCase):
         artifact = (LC_ROOT / "references" / "artifact-contract.md").read_text(encoding="utf-8")
         lifecycle = (LC_ROOT / "references" / "lifecycle-state-model.md").read_text(encoding="utf-8")
         impl_skill = (SUITE_ROOT / "dev-impl" / "SKILL.md").read_text(encoding="utf-8")
-        template = (SUITE_ROOT / "dev-impl" / "references" / "delivery-template.md").read_text(encoding="utf-8")
+        outline = (SUITE_ROOT / "dev-impl" / "references" / "outline.md").read_text(encoding="utf-8")
+        model = (SUITE_ROOT / "dev-impl" / "references" / "implementation-unit.md").read_text(encoding="utf-8")
         review_skill = (SUITE_ROOT / "dev-cr" / "SKILL.md").read_text(encoding="utf-8")
 
         self.assertIn("人类可读实现交付摘要", readme)
         self.assertIn("实现交付摘要同样只是指定版本 `IMP/BUILD`", artifact)
         self.assertIn("没有独立状态，不新增阶段门", lifecycle)
         self.assertIn("无独立状态的只读投影视图", impl_skill)
-        self.assertIn("## 实现交付摘要（人类可读只读投影）", template)
+        self.assertIn("当前进度与范围", outline)
+        self.assertIn("## BUILD 本地检查批次", model)
         self.assertIn("不能替代实际差异", review_skill)
-        self.assertNotIn("type: implementation-summary", template)
-        self.assertNotIn("id: IDOC-", template)
+        self.assertNotIn("protocol_version", outline)
+        self.assertFalse((SUITE_ROOT / "dev-impl" / "references" / "delivery-template.md").exists())
 
     def test_handoff_rejects_unqualified_acceptance_timestamp(self) -> None:
         handoff = {

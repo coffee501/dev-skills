@@ -71,6 +71,9 @@ def validate_suite(root: Path = SUITE_ROOT) -> list[str]:
         "dev-lld/tests/test_skill_contract.py",
         "dev-impl/scripts/validate_implementation_artifact.py",
         "dev-impl/tests/test_skill_contract.py",
+        "dev-cr/references/outline.md",
+        "dev-impl/references/outline.md",
+        "dev-val/references/outline.md",
         "dev-test/references/output-contracts.md",
         "dev-test/scripts/validate_test_artifact.py",
         "dev-test/tests/test_skill_contract.py",
@@ -332,23 +335,26 @@ def validate_suite(root: Path = SUITE_ROOT) -> list[str]:
             errors.append(f"dev-test missing lifecycle rule: {token}")
 
     implementation_skill = (root / "dev-impl" / "SKILL.md").read_text(encoding="utf-8")
-    implementation_template = (root / "dev-impl" / "references" / "delivery-template.md").read_text(encoding="utf-8")
+    implementation_outline_path = root / "dev-impl" / "references" / "outline.md"
+    implementation_outline = implementation_outline_path.read_text(encoding="utf-8") if implementation_outline_path.is_file() else ""
+    implementation_model = (root / "dev-impl" / "references" / "implementation-unit.md").read_text(encoding="utf-8")
     for token in (
         "人类可读实现交付摘要", "无独立状态的只读投影视图",
         "当前 `IMP/BUILD` 来源", "不得产生新的批准、完成或验证结论",
     ):
         if token not in implementation_skill:
             errors.append(f"dev-impl missing implementation summary rule: {token}")
-    for token in (
-        "实现交付摘要（人类可读只读投影）", "来源变化后", "需求与设计落实",
-        "实际修改与行为", "契约与工程影响", "偏差、限制与剩余风险",
-        "不建立新的正式产物类型、编号、状态、owner或批准结论",
-    ):
-        if token not in implementation_template:
-            errors.append(f"dev-impl delivery template missing implementation summary rule: {token}")
-    for forbidden in ("type: implementation-summary", "id: IDOC-"):
-        if forbidden in implementation_template:
-            errors.append(f"implementation summary must remain a read-only view: {forbidden}")
+    for token in ("当前进度与范围", "需求、设计与实际修改", "本地检查与证据", "无独立状态只读视图"):
+        if token not in implementation_outline:
+            errors.append(f"dev-impl outline missing implementation summary rule: {token}")
+    for token in ("## IMP 实现单元", "## BUILD 本地检查批次", "## 实现交接输入"):
+        if token not in implementation_model:
+            errors.append(f"dev-impl model missing internal contract: {token}")
+    if (root / "dev-impl" / "references" / "delivery-template.md").exists():
+        errors.append("dev-impl legacy delivery-template.md must be removed")
+    for skill_name in ("dev-cr", "dev-impl", "dev-val"):
+        if "references/outline.md" not in (root / skill_name / "SKILL.md").read_text(encoding="utf-8"):
+            errors.append(f"{skill_name}: user-facing outline link is missing")
 
     validation_skill = (root / "dev-val" / "SKILL.md").read_text(encoding="utf-8")
     for token in (

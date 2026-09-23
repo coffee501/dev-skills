@@ -27,8 +27,8 @@ description: "独立审查后端与集成的实际实现及变更，判断其是
 | 模式 | 使用条件 | 默认结果 |
 | --- | --- | --- |
 | 评审就绪诊断 | 基线、目标范围或设计依据不足 | 阻塞、缺口和可继续检查 |
-| 实现单元评审 | 已有 `IMP/BUILD` 和实际修改 | `REV`、问题和结论 |
-| 测试自动化实现评审 | 已有 `AUT Ready`、`IMP(kind=test-automation)`、`BUILD` 和测试代码 | 规格一致性、断言可信度、稳定性及 `REV` |
+| 实现单元评审 | 已有 `IMP/BUILD` 和实际修改 | 可读的评审发现、结论与整改建议 |
+| 测试自动化实现评审 | 已有 `AUT Ready`、`IMP(kind=test-automation)`、`BUILD` 和测试代码 | 规格一致性、断言可信度、稳定性及评审结论 |
 | PR/提交/补丁评审 | 给定基础与目标版本 | 变更集、影响和逐项发现 |
 | 迁移或契约专项 | Schema、数据、API、事件或配置变化 | 兼容、恢复和副作用结论 |
 | 整改复审 | 评审问题已处理 | 原问题处置、新增问题和新结论 |
@@ -59,6 +59,7 @@ description: "独立审查后端与集成的实际实现及变更，判断其是
 - 检查新增机制、抽象、依赖、层次或实现单元是否过度设计或过度拆分时，读取 [复杂度与拆分治理](../dev-lc/references/complexity-governance.md)。
 - 整改复审、范围变化或旧批准失效时读取 [references/re-review.md](references/re-review.md)。
 - 生成或校验正式 `REV` 时读取 [references/output-contracts.md](references/output-contracts.md)。
+- 向用户呈现任何评审结果时，读取 [references/outline.md](references/outline.md)。
 
 ## 执行评审流程
 
@@ -101,10 +102,6 @@ JSON形式的评审产物可用 `scripts/validate_review_artifact.py` 检查最�
 
 ## 组织输出
 
-- **就绪诊断**：范围、输入、缺口、P0/P1和可继续只读检查。
-- **评审发现**：按严重度排序的位置、证据、条件、影响、整改目标和验证要求。
-- **评审结论**：`REV`、base/head、覆盖、限制、`Approved/ChangesRequested/Blocked`及依据。
-- **复审结果**：原发现处置、差异变化、新增发现、保留风险和后继关系。
-- **交接**：面向 `dev-impl/dev-val` 或上游责任方的版本化 `Prepared HOF`。
+面向用户的就绪诊断、局部评审、完整评审、复审及审计，统一按 [references/outline.md](references/outline.md) 组织可读结果。`REV/HOF` 仅按内部协议记录和交接；默认答复不展示原始 JSON，用户明确要求协议内容时再提供。
 
 没有可执行问题时明确写“未发现阻塞问题”，同时保留评审范围和限制；不要为了填充报告制造问题。

@@ -26,6 +26,10 @@ class DevImplContractTests(unittest.TestCase):
         skill = (IMPL_ROOT / "SKILL.md").read_text(encoding="utf-8")
         model = (IMPL_ROOT / "references" / "implementation-unit.md").read_text(encoding="utf-8")
         self.assertIn("scripts/validate_implementation_artifact.py", skill)
+        self.assertIn("references/outline.md", skill)
+        self.assertTrue((IMPL_ROOT / "references" / "outline.md").is_file())
+        self.assertNotIn("delivery-template.md", skill)
+        self.assertFalse((IMPL_ROOT / "references" / "delivery-template.md").exists())
         self.assertIn("code/config/contract/migration/test-automation", model)
         self.assertNotIn("kind=product", skill + model)
 

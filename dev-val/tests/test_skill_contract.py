@@ -65,6 +65,7 @@ class SkillContractTests(unittest.TestCase):
             "gate-evaluation.md",
             "non-functional-execution.md",
             "output-contracts.md",
+            "outline.md",
             "review-checklist.md",
         ]
         for name in required:

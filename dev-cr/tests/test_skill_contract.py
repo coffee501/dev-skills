@@ -40,8 +40,9 @@ class DevCrContractTests(unittest.TestCase):
         self.assertRegex(self.manifest, r"allow_implicit_invocation:\s*true")
 
     def test_required_contracts_and_links(self) -> None:
-        for name in ("review-model.md", "review-checklist.md", "re-review.md", "output-contracts.md"):
+        for name in ("review-model.md", "review-checklist.md", "re-review.md", "output-contracts.md", "outline.md"):
             self.assertTrue((ROOT / "references" / name).is_file())
+        self.assertIn("references/outline.md", self.skill)
         for value in ("REV Approved", "共享协议不可用", "不自动调用其他 Skill", "复杂度与拆分治理", "validate_review_artifact.py"):
             self.assertIn(value, self.skill)
         pattern = re.compile(r"\[[^\]]+\]\(([^)#]+)(?:#[^)]+)?\)")
