@@ -1,35 +1,34 @@
 # Dev Skills
 
-面向跨业务领域后端服务与系统集成开发阶段的 Skill 套件。各模块可以独立使用；需要正式编号、阶段门、失效传播和跨模块交接时，由 `dev-lc` 提供共享控制面。套件止于验证门，不执行发布、生产迁移、流量操作或生产运维。
+面向跨业务领域后端服务与系统集成开发阶段的套件。`dev-orch` 智能体理解目标、选择并主动调用专业 Skill，管理阶段路线、进度和交接；专业 Skill 也可独立使用。套件止于验证门，不执行发布、生产迁移、流量操作或生产运维。
 
-当前插件版本由根目录 `VERSION` 定义，当前值为 `8.0.2`；正式产物协议为 `DEV-SUITE-8.0`。
+当前插件版本由根目录 `VERSION` 定义，当前值为 `9.0.0`；正式产物协议为 `DEV-SUITE-8.0`。
 
 ## 平台兼容
 
-核心流程只维护在模块表列出的活动根目录 `dev-*/SKILL.md`，当前优先适配 Claude Code，并保留 Codex Skill 兼容：
+专业流程维护在各目录的 `SKILL.md`，编排核心维护在 `dev-orch/AGENT.md`；Codex 的轻量启动入口位于 `.agents/skills/dev-orch/`。当前优先适配 Claude Code，并保留 Codex 显式启动入口：
 
-- **Codex**：安装或引用根目录 `dev-*` Skill；单阶段使用对应 `$dev-*`，多阶段显式使用 `$dev-orch`。
-- **Claude Code项目模式**：在本仓库或保留 `.claude/skills` 结构的项目中启动，使用 `/dev-lc` 等命令。
-- **Claude Code插件模式**：在仓库根目录使用 `claude --plugin-dir .` 加载，使用 `/dev-skills:dev-lc` 等命令。
+- **Codex**：使用 `$dev-orch <任务>` 在普通主会话加载智能体核心；专业 Skill 仍可独立调用。`.codex/agents/dev-orch.toml` 用于派生智能体配置。
+- **Claude Code项目模式**：在本仓库或保留 `.claude/skills` 结构的项目中启动，使用 `/dev-orch` 等命令。
+- **Claude Code插件模式**：在仓库根目录使用 `claude --plugin-dir .` 加载，使用 `/dev-skills:dev-orch` 等命令。
 - **前端接口对接**：使用 `/dev-skills:dev-fia <服务、消费方和契约位置>`；输出场景化对接文档，不生成前端代码。
-- **Claude Code多阶段调度**：使用 `/dev-skills:dev-orch <任务>` 启动同步调度子会话，或使用 `claude --plugin-dir . --agent dev-orch` 启动调度主会话；单阶段任务仍直接调用专业 Skill。
-- **Codex多阶段调度**：使用 `$dev-orch`；原生子代理可用时协调专业任务，不可用时基于LC路线输出只读执行投影和任务包。
+- **Claude Code多阶段调度**：使用 `/dev-skills:dev-orch <任务>` 启动同步调度子会话，或使用 `claude --plugin-dir . --agent dev-orch` 启动调度主会话；智能体依据目标主动选择专业 Skill。 子会话不继承当前对话历史，命令参数需写明依赖的约束、已有决定和输入位置。
+- **Codex多阶段治理与调度**：使用 `$dev-orch`；根据有效输入建立路线，原生子代理可用时按需协调专业任务。
 
-`dev-*/agents/openai.yaml` 是 Codex 展示和触发元数据；`.claude/skills/*` 是 Claude Code 薄适配器；
+`dev-*/agents/openai.yaml` 是专业 Skill 的 Codex 元数据；`.agents/skills/dev-orch/agents/openai.yaml` 仅控制启动入口；`.claude/skills/*` 是 Claude Code 薄适配器；
 [Claude插件清单](.claude-plugin/plugin.json)负责可分发注册。适配层不复制核心流程，平台差异见
-[工具兼容规则](dev-lc/references/tool-compatibility.md)。
+[工具兼容规则](dev-orch/references/tool-compatibility.md)。
 
-`dev-orch` 是可选的只读调度 Skill/Agent，适用于LC路线跨三个以上开发阶段、复杂迁移实现或端到端开发交付。它通过
-[生命周期—调度接口](dev-lc/references/orchestration-interface.md)消费 `dev-lc` 的路线，再按
-[调度协议](dev-lc/references/orchestration-protocol.md)准备任务包、协调依赖和收敛状态；不自行增删阶段，不编写专业产物，也不替代授权。
-Codex 显式执行 `$dev-orch`；Claude Code 执行 `/dev-skills:dev-orch <任务>`，或用 `--agent dev-orch` 启动调度主会话。两端共享根 `dev-orch/SKILL.md`，达到子代理限制后退回路由。
+`dev-orch` 统一负责目标理解、专业 Skill 选择与主动调用、生命周期治理和按需调度：建立阶段路线，评估门禁、失效和交接，并在跨阶段任务中协调执行。
+路线与执行投影遵循[路线契约](dev-orch/references/orchestration-interface.md)和[调度协议](dev-orch/references/orchestration-protocol.md)；专业产物与结论仍由对应 Skill 负责。
+Codex 显式执行 `$dev-orch`；Claude Code 执行 `/dev-skills:dev-orch <任务>`，或用 `--agent dev-orch` 启动调度主会话。两端共享[智能体核心](dev-orch/AGENT.md)。子代理达到限制时等待容量，或在有权限的上下文顺序完成工作。
 
 调度中间状态不会写入项目。插件内置的 `dev_state` MCP 使用 `${CLAUDE_PLUGIN_DATA}` 或 `DEV_SKILLS_STATE_HOME` 保存
 SQLite 状态库；项目中只允许出现用户明确确认的最终文档、代码、配置或迁移产物。状态服务需要 Node.js 22.5 或更高版本。
 
 ## 模块
 
-| Skill | 责任 | 主要产物 |
+| 模块 | 责任 | 主要产物 |
 | --- | --- | --- |
 | `dev-ctx` | 理解存量实现与As-Is证据 | `CTX/CTXF/CTXP/CTXG` |
 | `dev-req` | 需求、规则和验收 | `REQ/RULE/AC` |
@@ -40,8 +39,7 @@ SQLite 状态库；项目中只允许出现用户明确确认的最终文档、�
 | `dev-cr` | 独立实现审查、结论与整改复审 | `REV`；可读评审报告 |
 | `dev-test` | 测试场景、用例、数据和自动化规格 | `TSC/TC/TDP/TD/TENV/TCOND/AUT` |
 | `dev-val` | 测试执行、证据、缺陷和验证结论 | `RUN/EVD/DEFECT/GATE`；可读执行摘要或验证报告 |
-| `dev-lc` | 生命周期状态、阶段适用性、门禁、追踪、失效和交接 | `CHG/HOF/LCV` |
-| `dev-orch` | 将LC路线转换为任务图，协调Agent、并行执行和结果收敛 | `WIT/SWI` 和调度状态 |
+| `dev-orch` | 生命周期路线、门禁、追踪、失效、交接与按需调度 | 内部 `CHG/HOF/LCV/WIT/SWI`；用户可读进度 |
 
 `dev-cr`、`dev-impl`、`dev-val` 的编号记录用于套件内部追踪与交接；面向用户的内容分别按各自的 `references/outline.md` 组织。
 
@@ -66,18 +64,18 @@ CTX（按需）
 ## 三种使用方式
 
 - **独立模式**：显式调用一个 Skill，使用本地临时编号，保留来源、范围、风险、证据和时间；不宣称正式阶段门或HOF已经确认。
-- **体系模式**：先用生命周期治理 Skill 建立或复用 `CHG` 和阶段路线，再显式调用专业 Skill；Codex使用 `$dev-lc`，Claude Code项目模式使用 `/dev-lc`，插件模式使用 `/dev-skills:dev-lc`。专业 Skill只创建 `Prepared HOF`，接收方或正式责任系统确认接收。
-- **调度模式**：Codex 使用 `$dev-orch`；Claude Code 使用 `/dev-skills:dev-orch <任务>` 或 `dev-orch` 主会话。小型请求绕过调度器；套件外部的发布和生产工作不进入调度路线。
+- **体系模式**：`dev-orch` 建立或复用 `CHG` 和阶段路线，并按条件主动调用专业 Skill；Codex 使用 `$dev-orch`，Claude Code 使用 `/dev-orch` 或 `/dev-skills:dev-orch`。专业 Skill 只创建 `Prepared HOF`，接收方或正式责任系统确认接收。
+- **调度模式**：Codex 使用 `$dev-orch`；Claude Code 使用 `/dev-skills:dev-orch <任务>` 或 `dev-orch` 主会话。智能体对小型请求直接执行适用专业 Skill；套件外部的发布和生产工作不进入调度路线。
 
 `dev-cr` 保持可被“审查实现、审查PR、验收实现”等明确请求隐式发现；普通实现请求不会因此自动扩展为完整评审。
-进入调度模式后，适用 `dev-impl` 产生可评审候选并满足LC路线条件时，`dev-orch` 自动分派独立 `dev-cr` 上下文；
+进入调度模式后，适用 `dev-impl` 产生可评审候选并满足路线条件时，`dev-orch` 自动分派独立 `dev-cr` 上下文；
 路线遗漏评审、评审上下文与实现上下文不独立或 `REV` 未覆盖候选时，不得进入正式G5。
 
 `dev-ctx/dev-impl/dev-val` 默认要求显式调用，其中后两项属于执行型 Skill。真实数据、外部副作用和风险接受仍需精确目标及项目授权；发布和生产运维不属于本套件能力。
 
 ## 协议与验证
 
-当前协议为 `DEV-SUITE-8.0`，并兼容7.0和7.1开发阶段存量产物。共享规则位于 [产物协议](dev-lc/references/artifact-contract.md)、[状态模型](dev-lc/references/lifecycle-state-model.md)、[交接协议](dev-lc/references/handoff-contract.md)和[失效传播](dev-lc/references/invalidation-rules.md)。
+当前协议为 `DEV-SUITE-8.0`，并兼容7.0和7.1开发阶段存量产物。共享规则位于 [产物协议](dev-orch/references/artifact-contract.md)、[状态模型](dev-orch/references/lifecycle-state-model.md)、[交接协议](dev-orch/references/handoff-contract.md)和[失效传播](dev-orch/references/invalidation-rules.md)。
 
 在仓库根目录运行：
 
@@ -90,8 +88,7 @@ python scripts/validate_all.py
 
 ```text
 node --disable-warning=ExperimentalWarning --test dev-state/tests/state-store.test.mjs dev-state/tests/mcp-server.test.mjs
-python dev-lc/scripts/validate_suite.py
-python -m unittest discover -s dev-lc/tests -p "test_*.py" -v
+python dev-orch/scripts/validate_suite.py
 python -m unittest discover -s dev-cr/tests -p "test_*.py" -v
 python -m unittest discover -s dev-ctx/tests -p "test_*.py" -v
 python -m unittest discover -s dev-fia/tests -p "test_*.py" -v
@@ -105,7 +102,7 @@ python -m unittest discover -s dev-val/tests -p "test_*.py" -v
 powershell -NoProfile -File dev-req/scripts/validate.ps1
 ```
 
-所有正式JSON产物都可先使用 `dev-lc/scripts/validate_artifact_envelope.py` 检查共享信封；存在模块专用校验器时再执行
+所有正式JSON产物都可先使用 `dev-orch/scripts/validate_artifact_envelope.py` 检查共享信封；存在模块专用校验器时再执行
 模块增量规则。GitHub Actions在Windows和Linux上运行同一完整门禁，避免平台或漏跑造成假绿。
 
 这些测试执行结构契约、验证器和外部状态机行为；场景JSON只是前向评估用例目录，不等同于真实Agent行为已经通过。模块自带的校验器和确定性测试仍不替代独立语义评审、真实测试证据、授权或阶段门确认；支持独立Agent运行的环境还应按场景目录执行前向评估，并把使用的套件版本、输入场景、独立执行上下文和结果摘要作为发布证据。

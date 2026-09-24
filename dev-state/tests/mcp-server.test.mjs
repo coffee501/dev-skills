@@ -50,6 +50,11 @@ test("MCP server initializes and exposes external-state tools", async () => {
       "work_get", "work_list", "agent_run_bind", "agent_run_list",
       "handoff_accept", "handoff_reject", "handoff_supersede", "promotion_prepare", "audit_list",
     ]) assert.ok(names.has(name));
+    const workPrepare = listed.result.tools.find((tool) => tool.name === "work_prepare");
+    for (const field of ["lifecycle_route_ref", "route_version", "node_id"]) {
+      assert.ok(workPrepare.inputSchema.required.includes(field));
+      assert.ok(workPrepare.inputSchema.properties[field]);
+    }
     const resolved = await server.request(3, "tools/call", {
       name: "workspace_resolve", arguments: { project_path: resolve("."), display_name: "dev-skills" },
     });
@@ -97,7 +102,7 @@ test("MCP lifecycle views retain LCV identities across atomic replacement", asyn
       name: "workspace_resolve", arguments: { project_path: resolve("."), display_name: "dev-skills" },
     });
     const common = {
-      workspace_id: resolved.result.structuredContent.workspace_id, change_id: "CHG-LCV", actor: "dev-lc", source: "test",
+      workspace_id: resolved.result.structuredContent.workspace_id, change_id: "CHG-LCV", actor: "dev-orch", source: "test",
     };
     const first = await server.request(2, "tools/call", {
       name: "lifecycle_put", arguments: {

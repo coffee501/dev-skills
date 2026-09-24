@@ -8,7 +8,7 @@
 - [CTXG 上下文缺口](#ctxg-上下文缺口)
 
 正式上下文由一个 `CTX` 包和可独立引用、版本化、失效的 `CTXF/CTXP/CTXG` 子制品组成。子制品必须遵守
-[统一产物信封](../../dev-lc/references/artifact-contract.md)，并通过 `parent_ctx` 归入上下文包。下游引用必须同时携带
+[统一产物信封](../../dev-orch/references/artifact-contract.md)，并通过 `parent_ctx` 归入上下文包。下游引用必须同时携带
 `id` 和 `version`，不得只引用裸编号。
 
 ## 公共规则
@@ -17,7 +17,7 @@
 - `applies_to` 绑定仓库、代码或契约版本、模块、配置组合和环境；未知值必须显式标记。
 - 证据定位优先使用“仓库与版本 + 文件或机器契约节点 + 符号或配置键”；行号只作为辅助提示。
 - 语义或适用范围发生变化时增加版本；含义被重新定义时创建后继编号并记录 `supersedes`，不得覆盖历史。
-- `consumer_refs` 记录已知下游引用。若项目有统一制品索引，可仅记录索引位置，由 `dev-lc` 维护反向关系。
+- `consumer_refs` 记录已知下游引用。若项目有统一制品索引，可仅记录索引位置，由 `dev-orch` 维护反向关系。
 - `Ready` 的事实或路径必须为 `Current`；进入 `PotentiallyStale/Stale` 时同步更新同名新鲜度。`Draft` 可以为
   `Unassessed`，`Superseded` 保留被替代前的新鲜度以供审计。
 

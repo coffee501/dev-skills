@@ -33,7 +33,7 @@
     },
     {
       "id": "handoff-rejection-and-rework",
-      "route": ["dev-lc", "dev-lld", "dev-req", "dev-lld"],
+      "route": ["dev-lld", "dev-req", "dev-lld"],
       "required_artifacts": ["CHG", "HOF", "LCV"],
       "invariants": ["Prepared does not imply Accepted", "Rejected handoff preserves reason and successor relationship"]
     },

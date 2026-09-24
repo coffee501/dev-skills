@@ -5,7 +5,7 @@ $ErrorActionPreference = 'Stop'
 $skillRoot = Split-Path -Parent $PSScriptRoot
 $skillRootFull = [System.IO.Path]::GetFullPath($skillRoot).TrimEnd('\') + '\'
 $suiteRoot = Split-Path -Parent $skillRoot
-$devLcRoot = [System.IO.Path]::GetFullPath((Join-Path $suiteRoot 'dev-lc')).TrimEnd('\') + '\'
+$devOrchRoot = [System.IO.Path]::GetFullPath((Join-Path $suiteRoot 'dev-orch')).TrimEnd('\') + '\'
 $skillPath = Join-Path $skillRoot 'SKILL.md'
 $manifestPath = Join-Path $skillRoot 'agents\openai.yaml'
 $reversePath = Join-Path $skillRoot 'references\implementation-to-requirements.md'
@@ -183,8 +183,8 @@ foreach ($file in $markdownFiles) {
 
         $resolved = [System.IO.Path]::GetFullPath((Join-Path $file.DirectoryName $target))
         if (-not $resolved.StartsWith($skillRootFull, [System.StringComparison]::OrdinalIgnoreCase)) {
-            if ($resolved.StartsWith($devLcRoot, [System.StringComparison]::OrdinalIgnoreCase) -and (Test-Path -LiteralPath $devLcRoot)) {
-                Assert-Condition -Condition (Test-Path -LiteralPath $resolved) -Message "Broken dev-lc suite reference: $($file.FullName) -> $target"
+            if ($resolved.StartsWith($devOrchRoot, [System.StringComparison]::OrdinalIgnoreCase) -and (Test-Path -LiteralPath $devOrchRoot)) {
+                Assert-Condition -Condition (Test-Path -LiteralPath $resolved) -Message "Broken dev-orch suite reference: $($file.FullName) -> $target"
                 continue
             }
 

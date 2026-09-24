@@ -81,7 +81,7 @@ class SkillContractTests(unittest.TestCase):
                 self.assertTrue(resolved.exists(), f"broken link: {path} -> {target}")
                 self.assertTrue(
                     resolved.is_relative_to(SKILL_ROOT.resolve())
-                    or resolved.is_relative_to((SUITE_ROOT / "dev-lc").resolve()),
+                    or resolved.is_relative_to((SUITE_ROOT / "dev-orch").resolve()),
                     f"unexpected package dependency: {path} -> {target}",
                 )
 
@@ -168,7 +168,7 @@ class SkillContractTests(unittest.TestCase):
             "reason": "all required targets have valid evidence",
             "invalidation_conditions": [],
             "revalidation_conditions": [],
-            "next_responsibility": "dev-lc",
+            "next_responsibility": "dev-orch",
             "handoff_refs": [],
             "risks": [],
             "evidence": ["EVD-001@v1"],

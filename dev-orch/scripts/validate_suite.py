@@ -11,15 +11,15 @@ from pathlib import Path
 
 
 SUITE_ROOT = Path(__file__).resolve().parents[2]
-LC_ROOT = SUITE_ROOT / "dev-lc"
+ORCH_ROOT = SUITE_ROOT / "dev-orch"
 EXPECTED_SKILLS = {
     "dev-ctx", "dev-req", "dev-hld", "dev-lld", "dev-impl", "dev-cr",
-    "dev-fia", "dev-test", "dev-val", "dev-lc", "dev-orch",
+    "dev-fia", "dev-test", "dev-val",
 }
-CONTROL_SKILLS = {"dev-lc", "dev-orch"}
-SPECIALISTS = EXPECTED_SKILLS - CONTROL_SKILLS
+CONTROL_SKILLS = {"dev-orch"}
+SPECIALISTS = EXPECTED_SKILLS
 EXECUTION_SKILLS = {"dev-impl", "dev-val"}
-EXPLICIT_ONLY_SKILLS = EXECUTION_SKILLS | {"dev-ctx", "dev-orch"}
+EXPLICIT_ONLY_SKILLS = EXECUTION_SKILLS | {"dev-ctx"}
 COMMON_FIELDS = {
     "protocol_version", "id", "type", "change", "version", "status", "owner",
     "sources", "applies_to", "risks", "evidence", "updated_at",
@@ -64,7 +64,13 @@ def validate_suite(root: Path = SUITE_ROOT) -> list[str]:
         ".github/workflows/validate.yml",
         "VERSION",
         "scripts/validate_all.py",
-        "dev-lc/scripts/validate_artifact_envelope.py",
+        "dev-orch/scripts/validate_artifact_envelope.py",
+        "dev-orch/AGENT.md",
+        "dev-orch/references/capability-routing.md",
+        "dev-orch/references/outline.md",
+        ".codex/agents/dev-orch.toml",
+        ".agents/skills/dev-orch/SKILL.md",
+        ".agents/skills/dev-orch/agents/openai.yaml",
         "dev-ctx/tests/test_skill_contract.py",
         "dev-req/tests/test_skill_contract.py",
         "dev-hld/tests/test_skill_contract.py",
@@ -149,7 +155,7 @@ def validate_suite(root: Path = SUITE_ROOT) -> list[str]:
     plugin_path = root / ".claude-plugin" / "plugin.json"
     try:
         plugin = json.loads(plugin_path.read_text(encoding="utf-8"))
-        expected_skill_entries = {f"./.claude/skills/{name}" for name in EXPECTED_SKILLS}
+        expected_skill_entries = {f"./.claude/skills/{name}" for name in EXPECTED_SKILLS | {"dev-orch"}}
         actual_skill_entries = set(plugin.get("skills", []))
         if actual_skill_entries != expected_skill_entries:
             errors.append("Claude plugin skill registry does not match the suite")
@@ -191,7 +197,7 @@ def validate_suite(root: Path = SUITE_ROOT) -> list[str]:
             errors.append(f"{skill_name}: Claude invocation policy mismatch")
         expected_core = f"../../../{skill_name}/SKILL.md"
         if expected_core not in adapter:
-            errors.append(f"{skill_name}: Claude adapter does not reference its core Skill")
+            errors.append(f"{skill_name}: Claude adapter does not reference its core")
 
     agent_path = root / ".claude" / "agents" / "dev-orch.md"
     if not agent_path.is_file():
@@ -199,11 +205,11 @@ def validate_suite(root: Path = SUITE_ROOT) -> list[str]:
     else:
         agent = agent_path.read_text(encoding="utf-8")
         required_agent_tokens = {
-            "name: dev-orch", "model: inherit", "effort: high", "Skill", "Agent", "dev-lc",
-            "CHG", "HOF", "LCV", "WIT", "Prepared", "Accepted", "dev-fia",
-            "mcp__dev_state__workspace_resolve", "workspace_resolve", "external-state-contract.md",
-            "orchestration-interface.md", "不要默认加载完整 `dev-lc/SKILL.md`",
-            "../../dev-orch/SKILL.md", "${CLAUDE_PLUGIN_ROOT}/dev-orch/SKILL.md",
+            "name: dev-orch", "model: inherit", "effort: high", "Skill", "Agent",
+            "CHG", "HOF", "LCV", "WIT", "Prepared", "Accepted",
+            "mcp__dev_state__workspace_resolve", "workspace_resolve",
+            "按核心文件中的相对链接读取", "开始前完整读取",
+            "../../dev-orch/AGENT.md", "${CLAUDE_PLUGIN_ROOT}/dev-orch/AGENT.md",
         }
         for token in sorted(required_agent_tokens):
             if token not in agent:
@@ -217,7 +223,12 @@ def validate_suite(root: Path = SUITE_ROOT) -> list[str]:
                 "Read", "Glob", "Grep", "Skill", "Agent", "SendMessage", "TaskStop",
                 "mcp__dev_state__state_info", "mcp__dev_state__workspace_resolve",
                 "mcp__dev_state__change_get", "mcp__dev_state__lifecycle_get",
+                "mcp__dev_state__change_get_or_create", "mcp__dev_state__change_put",
+                "mcp__dev_state__lifecycle_put", "mcp__dev_state__handoff_prepare",
                 "mcp__dev_state__handoff_get", "mcp__dev_state__handoff_list",
+                "mcp__dev_state__handoff_acknowledge", "mcp__dev_state__handoff_accept",
+                "mcp__dev_state__handoff_reject", "mcp__dev_state__handoff_supersede",
+                "mcp__dev_state__invalidation_apply", "mcp__dev_state__change_archive",
                 "mcp__dev_state__artifact_list",
                 "mcp__dev_state__work_prepare", "mcp__dev_state__work_get",
                 "mcp__dev_state__work_list", "mcp__dev_state__work_claim",
@@ -228,16 +239,11 @@ def validate_suite(root: Path = SUITE_ROOT) -> list[str]:
                 errors.append("Claude Code dev-orch agent tool allowlist is invalid")
             if "mcp__dev_state__*" in allowed or any(
                 name in allowed for name in {
-                    "mcp__dev_state__change_get_or_create", "mcp__dev_state__change_put",
-                    "mcp__dev_state__lifecycle_put", "mcp__dev_state__artifact_put",
-                    "mcp__dev_state__handoff_prepare", "mcp__dev_state__handoff_acknowledge",
-                    "mcp__dev_state__handoff_accept", "mcp__dev_state__handoff_reject",
-                    "mcp__dev_state__handoff_supersede", "mcp__dev_state__invalidation_apply",
-                    "mcp__dev_state__change_archive", "mcp__dev_state__promotion_prepare",
+                    "mcp__dev_state__artifact_put", "mcp__dev_state__promotion_prepare",
                     "mcp__dev_state__promotion_confirm",
                 }
             ):
-                errors.append("Claude Code dev-orch agent must not receive lifecycle mutation tools")
+                errors.append("Claude Code dev-orch agent must not receive specialist or promotion mutation tools")
         if not re.search(r"(?m)^disallowedTools:\s*.*\bWrite\b.*\bEdit\b.*\bBash\b", agent):
             errors.append("Claude Code dev-orch agent must deny direct mutation tools")
 
@@ -249,8 +255,8 @@ def validate_suite(root: Path = SUITE_ROOT) -> list[str]:
         required_command_tokens = {
             "name: dev-orch", "disable-model-invocation: true", "context: fork",
             "agent: dev-orch", "background: false", "$ARGUMENTS",
-            "/dev-skills:dev-orch", "Do not alter lifecycle semantics",
-            "do not implement specialist work", "../../../dev-orch/SKILL.md",
+            "/dev-skills:dev-orch", "Keep internal protocol JSON in the state service",
+            "../../../dev-orch/AGENT.md",
         }
         for token in sorted(required_command_tokens):
             if token not in command:
@@ -261,7 +267,7 @@ def validate_suite(root: Path = SUITE_ROOT) -> list[str]:
         errors.append("suite README.md is missing")
     else:
         readme_text = readme.read_text(encoding="utf-8")
-        for skill_name in sorted(EXPECTED_SKILLS):
+        for skill_name in sorted(EXPECTED_SKILLS | {"dev-orch"}):
             if f"`{skill_name}`" not in readme_text:
                 errors.append(f"README.md missing module {skill_name}")
         for token in (
@@ -281,7 +287,7 @@ def validate_suite(root: Path = SUITE_ROOT) -> list[str]:
             elif not resolved.is_relative_to(root.resolve()):
                 errors.append(f"link escapes suite: README.md -> {target}")
 
-    artifact_contract = (LC_ROOT / "references" / "artifact-contract.md").read_text(encoding="utf-8")
+    artifact_contract = (ORCH_ROOT / "references" / "artifact-contract.md").read_text(encoding="utf-8")
     for token in (
         "DEV-SUITE-8.0", "dev-cr", "REV", "dev-fia", "FIA", "dev-orch", "WIT",
         "TSC/TC Draft", "IMP(kind=test-automation)", "闭环验证结论 `GATE`", "只读投影视图",
@@ -290,7 +296,7 @@ def validate_suite(root: Path = SUITE_ROOT) -> list[str]:
         if token not in artifact_contract:
             errors.append(f"artifact contract missing {token}")
 
-    lifecycle_contract = (LC_ROOT / "references" / "lifecycle-state-model.md").read_text(encoding="utf-8")
+    lifecycle_contract = (ORCH_ROOT / "references" / "lifecycle-state-model.md").read_text(encoding="utf-8")
     for token in (
         "G1基于 `REQ/RULE/AC`", "IMP(kind=code/config/contract/migration)",
         "AUT Ready → IMP(kind=test-automation) → BUILD Passed → REV Approved",
@@ -300,34 +306,48 @@ def validate_suite(root: Path = SUITE_ROOT) -> list[str]:
         if token not in lifecycle_contract:
             errors.append(f"lifecycle contract missing test lifecycle rule: {token}")
 
-    orchestration_interface = LC_ROOT / "references" / "orchestration-interface.md"
+    orchestration_interface = ORCH_ROOT / "references" / "orchestration-interface.md"
     if not orchestration_interface.is_file():
         errors.append("lifecycle-orchestration interface is missing")
     else:
         interface_text = orchestration_interface.read_text(encoding="utf-8")
         for token in (
             "lifecycle_route_ref", "route_change_request", "coordination_status: Completed",
-            "不得增加、删除或改写阶段", "node_id", "无环图", "自动分派", "全部适用 `dev-cr`",
+            "不得在编译任务图时临时增加、删除或改写阶段", "node_id", "无环图", "自动分派", "全部适用 `dev-cr`",
             "capability_isolation: prompt-only",
         ):
             if token not in interface_text:
                 errors.append(f"lifecycle-orchestration interface missing {token}")
 
-    lifecycle_skill = (root / "dev-lc" / "SKILL.md").read_text(encoding="utf-8")
-    for token in ("生命周期规则和状态权威", "不创建 `WIT/SWI`", "orchestration-interface.md"):
-        if token not in lifecycle_skill:
-            errors.append(f"dev-lc missing governance boundary: {token}")
-    for forbidden in ("session-coordinate", "durable-coordinate"):
-        if forbidden in lifecycle_skill:
-            errors.append(f"dev-lc must not own runtime mode: {forbidden}")
+    orchestrator_agent = (root / "dev-orch" / "AGENT.md").read_text(encoding="utf-8")
+    for token in ("主动加载并执行对应专业 Skill", "capability-routing.md", "outline.md", "建立 CHG 上下文", "评估阶段适用性", "管理阶段门", "管理变化与失效", "管理交接与状态", "session-coordinate", "durable-coordinate", "lifecycle_route_ref", "route_change_request", "coordination_status: Completed", "orchestration-interface.md"):
+        if token not in orchestrator_agent:
+            errors.append(f"dev-orch missing governance or execution boundary: {token}")
 
-    orchestrator_skill = (root / "dev-orch" / "SKILL.md").read_text(encoding="utf-8")
-    for token in ("lifecycle_route_ref", "route_change_request", "coordination_status: Completed", "orchestration-interface.md"):
-        if token not in orchestrator_skill:
-            errors.append(f"dev-orch missing execution boundary: {token}")
-    for forbidden in ("选择最短充分路线", "开始前完整读取 [dev-lc]"):
-        if forbidden in orchestrator_skill:
-            errors.append(f"dev-orch duplicates lifecycle authority: {forbidden}")
+    agent_core_path = root / "dev-orch" / "AGENT.md"
+    for target in link_pattern.findall(orchestrator_agent):
+        if re.match(r"^[a-z][a-z0-9+.-]*:", target):
+            continue
+        resolved = (agent_core_path.parent / target).resolve()
+        if not resolved.is_file() or not resolved.is_relative_to(root.resolve()):
+            errors.append(f"broken agent core link: {target}")
+
+    launcher = (root / ".agents" / "skills" / "dev-orch" / "SKILL.md").read_text(encoding="utf-8")
+    if "../../../dev-orch/AGENT.md" not in launcher or len(launcher.splitlines()) > 20:
+        errors.append("Codex dev-orch launcher must remain thin and reference AGENT.md")
+    if (root / "dev-orch" / "SKILL.md").exists() or (root / "dev-orch" / "agents" / "openai.yaml").exists():
+        errors.append("dev-orch agent core must not contain a Skill entry")
+    launcher_metadata = (root / ".agents" / "skills" / "dev-orch" / "agents" / "openai.yaml").read_text(encoding="utf-8")
+    for target in link_pattern.findall(launcher):
+        resolved = (root / ".agents" / "skills" / "dev-orch" / target).resolve()
+        if not resolved.is_file() or not resolved.is_relative_to(root.resolve()):
+            errors.append(f"broken Codex dev-orch launcher link: {target}")
+    if "allow_implicit_invocation: false" not in launcher_metadata:
+        errors.append("Codex dev-orch launcher must require explicit invocation")
+    codex_agent = (root / ".codex" / "agents" / "dev-orch.toml").read_text(encoding="utf-8")
+    for token in ('name = "dev-orch"', "developer_instructions", "dev-orch/AGENT.md"):
+        if token not in codex_agent:
+            errors.append(f"Codex dev-orch agent missing {token}")
 
     test_skill = (root / "dev-test" / "SKILL.md").read_text(encoding="utf-8")
     for token in ("测试设计从G1开始", "IMP(kind=test-automation)", "自动化实现就绪"):
@@ -365,7 +385,7 @@ def validate_suite(root: Path = SUITE_ROOT) -> list[str]:
         if token not in validation_skill:
             errors.append(f"dev-val missing validation closure rule: {token}")
 
-    complexity_contract = LC_ROOT / "references" / "complexity-governance.md"
+    complexity_contract = ORCH_ROOT / "references" / "complexity-governance.md"
     if not complexity_contract.is_file():
         errors.append("complexity and decomposition governance contract is missing")
     else:
@@ -373,13 +393,14 @@ def validate_suite(root: Path = SUITE_ROOT) -> list[str]:
         for token in ("必要复杂度", "过度设计", "有效拆分", "过度拆分", "最低充分决策", "不得仅凭"):
             if token not in complexity_text:
                 errors.append(f"complexity governance contract missing {token}")
-        complexity_consumers = {"dev-lc", "dev-hld", "dev-lld", "dev-impl", "dev-cr", "dev-test", "dev-orch"}
+        complexity_consumers = {"dev-orch", "dev-hld", "dev-lld", "dev-impl", "dev-cr", "dev-test"}
         for skill_name in sorted(complexity_consumers):
-            skill_text = (root / skill_name / "SKILL.md").read_text(encoding="utf-8")
+            skill_path = (root / "dev-orch" / "AGENT.md") if skill_name == "dev-orch" else (root / skill_name / "SKILL.md")
+            skill_text = skill_path.read_text(encoding="utf-8")
             if "complexity-governance.md" not in skill_text:
                 errors.append(f"{skill_name}: complexity governance link is missing")
 
-    external_contract = LC_ROOT / "references" / "external-state-contract.md"
+    external_contract = ORCH_ROOT / "references" / "external-state-contract.md"
     if not external_contract.is_file():
         errors.append("external state contract is missing")
     else:
@@ -450,12 +471,12 @@ def validate_suite(root: Path = SUITE_ROOT) -> list[str]:
             errors.append(f"project-local intermediate state is forbidden: {forbidden.relative_to(root)}")
 
     validator_specs = [
-        ("envelope", root / "dev-lc" / "scripts" / "validate_artifact_envelope.py", "COMMON_FIELDS"),
+        ("envelope", root / "dev-orch" / "scripts" / "validate_artifact_envelope.py", "COMMON_FIELDS"),
         ("dev_val", root / "dev-val" / "scripts" / "validate_artifact.py", "COMMON_FIELDS"),
         ("dev_cr", root / "dev-cr" / "scripts" / "validate_review_artifact.py", "COMMON"),
         ("dev_fia", root / "dev-fia" / "scripts" / "validate_fia_artifact.py", "COMMON"),
         ("dev_impl", root / "dev-impl" / "scripts" / "validate_implementation_artifact.py", "COMMON"),
-        ("dev_lc", root / "dev-lc" / "scripts" / "validate_lifecycle_artifact.py", "COMMON"),
+        ("dev_orch_lifecycle", root / "dev-orch" / "scripts" / "validate_lifecycle_artifact.py", "COMMON"),
         ("dev_test", root / "dev-test" / "scripts" / "validate_test_artifact.py", "COMMON"),
     ]
     for name, path, field_name in validator_specs:
@@ -478,7 +499,7 @@ def validate_suite(root: Path = SUITE_ROOT) -> list[str]:
             if not {"DEV-SUITE-7.0", "DEV-SUITE-7.1", "DEV-SUITE-8.0"}.issubset(supported):
                 errors.append(f"{name}: validator must preserve DEV-SUITE-7.x and accept DEV-SUITE-8.0")
 
-    cases_path = LC_ROOT / "tests" / "end-to-end-cases.json"
+    cases_path = ORCH_ROOT / "tests" / "end-to-end-cases.json"
     try:
         document = json.loads(cases_path.read_text(encoding="utf-8"))
         if document.get("schema_version") != 1 or len(document.get("cases", [])) < 8:
@@ -496,7 +517,7 @@ def validate_suite(root: Path = SUITE_ROOT) -> list[str]:
     except (OSError, json.JSONDecodeError) as exc:
         errors.append(f"unable to read end-to-end cases: {exc}")
 
-    orchestration_path = LC_ROOT / "tests" / "orchestration-cases.json"
+    orchestration_path = ORCH_ROOT / "tests" / "orchestration-cases.json"
     try:
         document = json.loads(orchestration_path.read_text(encoding="utf-8"))
         cases = document.get("cases", [])
@@ -515,7 +536,10 @@ def validate_suite(root: Path = SUITE_ROOT) -> list[str]:
                 errors.append(f"{case.get('id')}: unknown orchestration skills: {sorted(unknown)}")
             if route & CONTROL_SKILLS:
                 errors.append(f"{case.get('id')}: execution route must not dispatch control skills")
-            if case.get("id") == "missing-lifecycle-route":
+            if case.get("id") == "single-stage-direct-route":
+                if case.get("lifecycle_route_ref") is not None or case.get("route") != ["dev-test"]:
+                    errors.append("direct specialist execution must not require a formal lifecycle route")
+            elif case.get("id") == "missing-lifecycle-route":
                 if case.get("lifecycle_route_ref") is not None or case.get("lifecycle_route_status") != "missing" or case.get("route"):
                     errors.append("missing lifecycle route must stop without an execution task graph")
             elif not isinstance(case.get("lifecycle_route_ref"), str) or not case.get("lifecycle_route_ref"):
@@ -535,22 +559,22 @@ def validate_suite(root: Path = SUITE_ROOT) -> list[str]:
         migration_route = indexed.get("migration-development-readiness", {}).get("route", [])
         if not migration_route or migration_route[-1] != "dev-val":
             errors.append("migration development route must stop at dev-val")
-        if indexed.get("depth-limit-fallback", {}).get("mode") != "route-only":
-            errors.append("dev-orch must fall back to route-only mode at the spawn limit")
+        if indexed.get("depth-limit-fallback", {}).get("mode") != "session-coordinate":
+            errors.append("dev-orch must keep authorized work moving at the spawn limit")
         if indexed.get("external-state-unavailable", {}).get("mode") != "route-only":
             errors.append("dev-orch must use route-only when durable state is required but unavailable")
         if indexed.get("codex-session-coordinate", {}).get("mode") != "session-coordinate":
             errors.append("Codex native agents must support non-durable session coordination")
-        if indexed.get("codex-native-unavailable", {}).get("mode") != "route-only":
-            errors.append("Codex must use route-only mode when native agents are unavailable")
+        if indexed.get("codex-native-unavailable", {}).get("mode") != "session-coordinate":
+            errors.append("Codex must keep authorized work moving when native agents are unavailable")
         if indexed.get("missing-lifecycle-route", {}).get("mode") != "route-only":
             errors.append("missing lifecycle route must use route-only mode")
         if not indexed.get("promotion-boundary", {}).get("requires_explicit_authorization"):
             errors.append("promotion must preserve explicit project-write authorization")
         if not indexed.get("handoff-rejection-replan", {}).get("route_change_requested"):
-            errors.append("handoff rejection must request LC route recalculation")
+            errors.append("handoff rejection must trigger route recalculation")
         if not indexed.get("input-version-invalidation", {}).get("route_change_requested"):
-            errors.append("input invalidation must request LC route recalculation")
+            errors.append("input invalidation must trigger route recalculation")
     except (OSError, json.JSONDecodeError) as exc:
         errors.append(f"unable to read orchestration cases: {exc}")
     return errors
@@ -562,7 +586,7 @@ def main() -> int:
         for error in errors:
             print(f"ERROR: {error}", file=sys.stderr)
         return 1
-    print(f"Dev Skill suite validation passed: {len(EXPECTED_SKILLS)} skills, protocol DEV-SUITE-8.0")
+    print(f"Dev Skill suite validation passed: {len(SPECIALISTS)} professional skills, 1 orchestrator agent, protocol DEV-SUITE-8.0")
     return 0
 
 

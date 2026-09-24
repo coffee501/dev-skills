@@ -18,7 +18,7 @@ description: "独立审查后端与集成的实际实现及变更，判断其是
 
 ## 接入 Dev 生命周期
 
-复用正式 `CHG`；没有权威编号时使用 `CHG-PENDING-*`。按 [产物协议](../dev-lc/references/artifact-contract.md) 管理 `REV`，按 [状态与阶段门](../dev-lc/references/lifecycle-state-model.md) 区分实现、评审和验证。整改、语义缺口或责任转移使用 [交接协议](../dev-lc/references/handoff-contract.md)，代码或评审范围变化时按 [失效传播规则](../dev-lc/references/invalidation-rules.md) 使旧结论失效。
+复用正式 `CHG`；没有权威编号时使用 `CHG-PENDING-*`。按 [产物协议](../dev-orch/references/artifact-contract.md) 管理 `REV`，按 [状态与阶段门](../dev-orch/references/lifecycle-state-model.md) 区分实现、评审和验证。整改、语义缺口或责任转移使用 [交接协议](../dev-orch/references/handoff-contract.md)，代码或评审范围变化时按 [失效传播规则](../dev-orch/references/invalidation-rules.md) 使旧结论失效。
 
 共享协议不可用时仍可独立进行只读实现审查和复审，使用本地 `REV-PENDING-*`，并将正式G4、HOF和全局状态标记为待确认。除非用户明确要求串联流程，否则只形成结构化交接，不自动调用其他 Skill。
 
@@ -56,7 +56,7 @@ description: "独立审查后端与集成的实际实现及变更，判断其是
 
 - 建立评审对象、状态、严重度和结论时读取 [references/review-model.md](references/review-model.md)。
 - 检查正确性、数据、契约、安全、性能、测试和运维风险时读取 [references/review-checklist.md](references/review-checklist.md)。
-- 检查新增机制、抽象、依赖、层次或实现单元是否过度设计或过度拆分时，读取 [复杂度与拆分治理](../dev-lc/references/complexity-governance.md)。
+- 检查新增机制、抽象、依赖、层次或实现单元是否过度设计或过度拆分时，读取 [复杂度与拆分治理](../dev-orch/references/complexity-governance.md)。
 - 整改复审、范围变化或旧批准失效时读取 [references/re-review.md](references/re-review.md)。
 - 生成或校验正式 `REV` 时读取 [references/output-contracts.md](references/output-contracts.md)。
 - 向用户呈现任何评审结果时，读取 [references/outline.md](references/outline.md)。

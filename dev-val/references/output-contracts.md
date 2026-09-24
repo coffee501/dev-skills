@@ -132,7 +132,7 @@ risk_acceptances: []
 reason: 结论依据
 invalidation_conditions: []
 revalidation_conditions: []
-next_responsibility: dev-lc-or-project-owner
+next_responsibility: dev-orch
 handoff_refs: []
 evidence: [EVD-001@v1]
 risks: [remaining-risk-or-ref]

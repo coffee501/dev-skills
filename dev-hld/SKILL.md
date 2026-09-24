@@ -11,7 +11,7 @@ description: "设计系统边界、模块职责、流程、数据归属和关键
 
 跨阶段、存量改造、迁移、下线或架构变化复用已有 `CHG`；没有权威编号时使用临时 `CHG-PENDING-001`。概要设计产物记录版本、来源、适用范围和关联需求，不自行改变上游编号。
 
-需要统一产物和追踪时读取 [产物协议](../dev-lc/references/artifact-contract.md)；形成详细设计或测试设计交接时读取 [交接协议](../dev-lc/references/handoff-contract.md)；需求、决策、边界或现有实现变化时读取 [失效传播规则](../dev-lc/references/invalidation-rules.md)。阶段门和基线含义遵循 [状态与阶段门](../dev-lc/references/lifecycle-state-model.md)，概要设计基线不代表实现或验证通过。
+需要统一产物和追踪时读取 [产物协议](../dev-orch/references/artifact-contract.md)；形成详细设计或测试设计交接时读取 [交接协议](../dev-orch/references/handoff-contract.md)；需求、决策、边界或现有实现变化时读取 [失效传播规则](../dev-orch/references/invalidation-rules.md)。阶段门和基线含义遵循 [状态与阶段门](../dev-orch/references/lifecycle-state-model.md)，概要设计基线不代表实现或验证通过。
 
 共享协议不可用时仍可独立完成概要设计诊断、设计、评审和详细设计拆分，使用本地临时标识并保留来源、范围、风险和
 证据；不得宣称正式G2、全局编号或标准HOF已经确认，也不因治理模块缺失而虚构状态。
@@ -94,7 +94,7 @@ description: "设计系统边界、模块职责、流程、数据归属和关键
 
 - 生成或重构完整概要设计、确定章节结构或绘图时，读取 [references/outline.md](references/outline.md)。
 - 评审现有设计或执行最终质量检查时，读取 [references/review-checklist.md](references/review-checklist.md)。
-- 新增系统边界、服务、模块、中间件或拆分详细设计任务时，读取 [复杂度与拆分治理](../dev-lc/references/complexity-governance.md)。
+- 新增系统边界、服务、模块、中间件或拆分详细设计任务时，读取 [复杂度与拆分治理](../dev-orch/references/complexity-governance.md)。
 - 分析已有系统、功能变更、兼容、迁移、替换或下线时，读取 [references/brownfield.md](references/brownfield.md)。
 - 已有功能变更、业务规则调整、系统集成、数据迁移、功能下线或架构迁移时，读取 [references/compatibility-checklist.md](references/compatibility-checklist.md)。
 - 只回答局部架构问题时，不必读取与问题无关的参考文件。

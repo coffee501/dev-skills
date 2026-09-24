@@ -9,7 +9,7 @@ description: "依据已确认设计实施后端与集成变更，提供可追踪
 
 ## 保持职责边界
 
-- 复用 `dev-lc` 或项目系统提供的 `CHG`；没有正式编号时可以引用共享规则生成的
+- 复用 `dev-orch` 或项目系统提供的 `CHG`；没有正式编号时可以引用共享规则生成的
   `CHG-PENDING-*`，但不得宣称全局唯一、拥有登记权或自行决定变更拆分合并。
 - 不改变 `REQ/RULE/AC`、系统边界、模块职责、数据权威或已接受 `DEC/DDEC`。
 - 不用实现便利性替代业务、架构或失败语义决策。
@@ -22,7 +22,7 @@ description: "依据已确认设计实施后端与集成变更，提供可追踪
 
 ## 接入 Dev 生命周期
 
-按 [产物协议](../dev-lc/references/artifact-contract.md) 维护 `IMP/BUILD`，按 [状态与阶段门](../dev-lc/references/lifecycle-state-model.md) 区分实现、本地检查、独立评审和验证状态。阶段推进、问题返回和责任转移使用 [交接协议](../dev-lc/references/handoff-contract.md)。设计、契约、代码、数据或配置变化时按 [失效传播规则](../dev-lc/references/invalidation-rules.md) 标识潜在影响。
+按 [产物协议](../dev-orch/references/artifact-contract.md) 维护 `IMP/BUILD`，按 [状态与阶段门](../dev-orch/references/lifecycle-state-model.md) 区分实现、本地检查、独立评审和验证状态。阶段推进、问题返回和责任转移使用 [交接协议](../dev-orch/references/handoff-contract.md)。设计、契约、代码、数据或配置变化时按 [失效传播规则](../dev-orch/references/invalidation-rules.md) 标识潜在影响。
 
 共享协议不可用时仍可独立完成范围明确的实现、修复、重构、迁移和自动化代码工作，使用本地 `IMP/BUILD/REV-PENDING-*`
 引用并保留来源、候选、适用范围、风险和证据；不得宣称正式G4、全局编号、独立评审或标准HOF已经确认。
@@ -65,7 +65,7 @@ description: "依据已确认设计实施后端与集成变更，提供可追踪
 ## 按需读取参考文件
 
 - 拆分、维护或汇报 `IMP/BUILD` 时读取 [references/implementation-unit.md](references/implementation-unit.md)。
-- 新增抽象、层、模块、依赖、适配机制或拆分 `IMP` 时读取 [复杂度与拆分治理](../dev-lc/references/complexity-governance.md)。
+- 新增抽象、层、模块、依赖、适配机制或拆分 `IMP` 时读取 [复杂度与拆分治理](../dev-orch/references/complexity-governance.md)。
 - 修改代码、依赖、数据、配置或运行环境前读取 [references/execution-safety.md](references/execution-safety.md)。
 - 已有代码、存量功能变更、缺陷修复或重构时读取 [references/brownfield-change.md](references/brownfield-change.md)。
 - 涉及数据、Schema、契约、配置或运行状态迁移时读取 [references/migration-implementation.md](references/migration-implementation.md)。

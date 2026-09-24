@@ -2,9 +2,11 @@
 
 ## 目标
 
-让所有 `dev-*` Skill 以相同方式标识变更、版本、来源、适用范围、风险和证据。专业 Skill 负责内容，`dev-lc` 只汇总元数据和关系。
+让所有 `dev-*` Skill 以相同方式标识变更、版本、来源、适用范围、风险和证据。专业 Skill 负责内容，`dev-orch` 只汇总元数据和关系。
 
-当前协议版本为 `DEV-SUITE-8.0`。新增向后兼容字段时增加次版本；删除字段、改变含义、状态语义或 Skill 标识时增加主版本，并对存量产物提供迁移和兼容说明。
+当前产物协议版本为 `DEV-SUITE-8.0`。新增向后兼容字段时增加协议次版本；删除字段、改变含义或状态语义时增加协议主版本。Skill 入口或职责的兼容变化由套件版本标识。
+
+套件 `9.0.0` 将原独立生命周期 Skill 的控制职责并入 `dev-orch`；已有 `CHG/HOF/LCV` 的字段和状态语义保持 `DEV-SUITE-8.0`。
 
 ## Skill 缩写
 
@@ -19,8 +21,7 @@
 | `dev-cr` | Code Review / Implementation Review | 新增 |
 | `dev-test` | Test Design | `dev-test-cases` |
 | `dev-val` | Validation | `dev-validation` |
-| `dev-lc` | Lifecycle Control | `dev-lifecycle` |
-| `dev-orch` | Orchestration | 新增跨平台调度入口 |
+| `dev-orch` | Lifecycle Governance and Orchestration | 合并原 `dev-lifecycle` 与跨平台调度入口 |
 
 `DEV-SUITE-2.0` 起只在新产物、交接和提示中使用当前名称。历史资料中的原名称按本表解释，不批量改写已有外部证据。
 
@@ -90,7 +91,7 @@ JSON形式的正式产物可以先使用 `../scripts/validate_artifact_envelope.
 
 | 模块 | 主要标识 |
 | --- | --- |
-| `dev-lc` | `CHG`、`HOF`、`LCV` 和阶段门视图 |
+| `dev-orch` | `CHG`、`HOF`、`LCV`、阶段门视图、`WIT`、会话内 `SWI` 和调度状态 |
 | `dev-ctx` | `CTX`、`CTXF`、`CTXP`、`CTXG` |
 | `dev-req` | `REQ`、`RULE`、`AC` |
 | `dev-hld` | `DEC`、`MOD`、`FLOW`、`VAL` |
@@ -100,7 +101,6 @@ JSON形式的正式产物可以先使用 `../scripts/validate_artifact_envelope.
 | `dev-cr` | `REV` |
 | `dev-test` | `TSC`、`TC`、`TDP`、`TD`、`TENV`、`TCOND`、`AUT` 规格 |
 | `dev-val` | `RUN`、`EVD`、`DEFECT`、闭环验证结论 `GATE`，以及自动化门禁状态确认 |
-| `dev-orch` | `WIT`、会话内 `SWI` 和调度状态；不拥有专业产物或生命周期结论 |
 
 模块可以引用其他模块的编号，但不得重编号、改变其含义或冒充其责任方接受状态。`AUT` 的测试目标和规格归
 `dev-test`，对应代码以 `IMP(kind=test-automation)` 记录，是否进入验证门禁由 `dev-val` 或项目质量责任方确认。

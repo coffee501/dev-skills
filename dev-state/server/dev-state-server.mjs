@@ -45,8 +45,9 @@ const tools = [
   }, ["workspace_id", "change_id"]) },
   { name: "work_prepare", description: "创建带输入指纹的版本化 WIT。", inputSchema: schema({
     ...COMMON_WRITE, work_item_id: { type: "string" }, skill: { type: "string" }, input_versions: { type: "array" },
+    lifecycle_route_ref: { type: "string" }, route_version: { type: "integer", minimum: 1 }, node_id: { type: "string" },
     owned_paths: { type: "array" }, owned_artifacts: { type: "array" }, expected_outputs: { type: "array" }, constraints: { type: "object" },
-  }, ["workspace_id", "change_id", "work_item_id", "skill", "input_versions", "expected_version", "actor", "source"]) },
+  }, ["workspace_id", "change_id", "work_item_id", "skill", "input_versions", "lifecycle_route_ref", "route_version", "node_id", "expected_version", "actor", "source"]) },
   { name: "work_get", description: "读取一个 WIT 的当前版本以恢复调度。", inputSchema: schema({
     workspace_id: { type: "string" }, change_id: { type: "string" }, work_item_id: { type: "string" },
   }, ["workspace_id", "change_id", "work_item_id"]) },

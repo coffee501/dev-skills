@@ -19,9 +19,9 @@ description: "执行批准的后端与集成测试，治理证据、失败分类
 
 ## 接入 Dev 生命周期
 
-复用输入中的正式 `CHG`；没有权威登记源时使用 `CHG-PENDING-001` 并标记临时，不宣称全局唯一。按 [产物协议](../dev-lc/references/artifact-contract.md) 维护 `RUN/EVD/DEFECT/GATE`，按 [状态与阶段门](../dev-lc/references/lifecycle-state-model.md) 分离执行批次、证据和验证门。
+复用输入中的正式 `CHG`；没有权威登记源时使用 `CHG-PENDING-001` 并标记临时，不宣称全局唯一。按 [产物协议](../dev-orch/references/artifact-contract.md) 维护 `RUN/EVD/DEFECT/GATE`，按 [状态与阶段门](../dev-orch/references/lifecycle-state-model.md) 分离执行批次、证据和验证门。
 
-阶段推进、失败返回和责任转移使用 [交接协议](../dev-lc/references/handoff-contract.md)。代码、契约、预期、自动化、数据条件或环境变化时，按 [失效传播规则](../dev-lc/references/invalidation-rules.md) 重新判断证据，不沿用不再适用的旧结论。
+阶段推进、失败返回和责任转移使用 [交接协议](../dev-orch/references/handoff-contract.md)。代码、契约、预期、自动化、数据条件或环境变化时，按 [失效传播规则](../dev-orch/references/invalidation-rules.md) 重新判断证据，不沿用不再适用的旧结论。
 
 共享协议不可用时仍可完成非正式就绪分析、本地执行和证据报告，但不得宣称正式全局编号、确认阶段门或标准 HOF 已经建立。使用本地 `CHG-PENDING-*`、`TEST-*` 和产物编号，并将治理结论标记为待确认。
 

@@ -50,7 +50,7 @@ class DevCrContractTests(unittest.TestCase):
             for target in pattern.findall(path.read_text(encoding="utf-8")):
                 resolved = (path.parent / target).resolve()
                 self.assertTrue(resolved.exists(), f"broken link: {path} -> {target}")
-                self.assertTrue(resolved.is_relative_to(ROOT) or resolved.is_relative_to(SUITE / "dev-lc"))
+                self.assertTrue(resolved.is_relative_to(ROOT) or resolved.is_relative_to(SUITE / "dev-orch"))
 
     def test_behavior_cases(self) -> None:
         document = json.loads((ROOT / "tests" / "behavior-cases.json").read_text(encoding="utf-8"))

@@ -6,8 +6,8 @@ import unittest
 from pathlib import Path
 
 
-LC_ROOT = Path(__file__).resolve().parents[1]
-SUITE_ROOT = LC_ROOT.parent
+ORCH_ROOT = Path(__file__).resolve().parents[1]
+SUITE_ROOT = ORCH_ROOT.parent
 
 
 def load(name: str, path: Path):
@@ -22,9 +22,9 @@ def load(name: str, path: Path):
 class SuiteContractTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
-        cls.suite_validator = load("suite_validator", LC_ROOT / "scripts" / "validate_suite.py")
-        cls.lifecycle_validator = load("lifecycle_validator", LC_ROOT / "scripts" / "validate_lifecycle_artifact.py")
-        cls.envelope_validator = load("envelope_validator", LC_ROOT / "scripts" / "validate_artifact_envelope.py")
+        cls.suite_validator = load("suite_validator", ORCH_ROOT / "scripts" / "validate_suite.py")
+        cls.lifecycle_validator = load("lifecycle_validator", ORCH_ROOT / "scripts" / "validate_lifecycle_artifact.py")
+        cls.envelope_validator = load("envelope_validator", ORCH_ROOT / "scripts" / "validate_artifact_envelope.py")
 
     def test_suite_contract(self) -> None:
         self.assertEqual(self.suite_validator.validate_suite(SUITE_ROOT), [])
@@ -215,10 +215,12 @@ class SuiteContractTests(unittest.TestCase):
         self.assertEqual(self.lifecycle_validator.validate_artifact(lifecycle_view), [])
 
     def test_orchestrator_preserves_execution_boundaries(self) -> None:
-        document = json.loads((LC_ROOT / "tests" / "orchestration-cases.json").read_text(encoding="utf-8"))
+        document = json.loads((ORCH_ROOT / "tests" / "orchestration-cases.json").read_text(encoding="utf-8"))
         cases = {case["id"]: case for case in document["cases"]}
+        invariants = " ".join(item for case in cases.values() for item in case["invariants"])
+        self.assertNotRegex(invariants, r"LC")
         self.assertEqual(cases["single-stage-direct-route"]["mode"], "direct")
-        self.assertEqual(cases["depth-limit-fallback"]["mode"], "route-only")
+        self.assertEqual(cases["depth-limit-fallback"]["mode"], "session-coordinate")
         self.assertEqual(cases["external-state-unavailable"]["mode"], "route-only")
         self.assertEqual(cases["migration-development-readiness"]["route"][-1], "dev-val")
         self.assertNotIn("dev-rel", cases["migration-development-readiness"]["route"])
@@ -227,7 +229,7 @@ class SuiteContractTests(unittest.TestCase):
         self.assertIn("dev-fia", cases["frontend-consumer-alignment"]["route"])
         self.assertIn(["dev-fia", "dev-test"], cases["frontend-consumer-alignment"]["parallel_groups"])
         self.assertEqual(cases["codex-session-coordinate"]["mode"], "session-coordinate")
-        self.assertEqual(cases["codex-native-unavailable"]["mode"], "route-only")
+        self.assertEqual(cases["codex-native-unavailable"]["mode"], "session-coordinate")
         self.assertIn("dev-cr", cases["codex-session-coordinate"]["route"])
         brownfield_route = cases["brownfield-end-to-end"]["route"]
         self.assertLess(brownfield_route.index("dev-req"), brownfield_route.index("dev-test"))
@@ -238,24 +240,24 @@ class SuiteContractTests(unittest.TestCase):
                 self.assertEqual(case["lifecycle_route_status"], "missing")
                 self.assertEqual(case["route"], [])
             else:
-                self.assertTrue(case["lifecycle_route_ref"])
+                if case_id == "single-stage-direct-route":
+                    self.assertIsNone(case["lifecycle_route_ref"])
+                else:
+                    self.assertTrue(case["lifecycle_route_ref"])
             self.assertIsInstance(case["route_change_requested"], bool)
-            self.assertNotIn("dev-lc", case["route"])
             self.assertNotIn("dev-orch", case["route"])
         self.assertTrue(cases["handoff-rejection-replan"]["route_change_requested"])
         self.assertTrue(cases["input-version-invalidation"]["route_change_requested"])
 
-    def test_lifecycle_rules_and_runtime_orchestration_are_separated(self) -> None:
-        lifecycle = (LC_ROOT / "SKILL.md").read_text(encoding="utf-8")
-        orchestrator = (SUITE_ROOT / "dev-orch" / "SKILL.md").read_text(encoding="utf-8")
-        interface = (LC_ROOT / "references" / "orchestration-interface.md").read_text(encoding="utf-8")
-        self.assertIn("生命周期规则和状态权威", lifecycle)
-        self.assertIn("不创建 `WIT/SWI`", lifecycle)
-        self.assertNotIn("session-coordinate", lifecycle)
-        self.assertIn("把 `dev-lc` 提供的生命周期路线编译为执行任务图", orchestrator)
+    def test_orchestrator_owns_lifecycle_and_runtime(self) -> None:
+        orchestrator = (ORCH_ROOT / "AGENT.md").read_text(encoding="utf-8")
+        interface = (ORCH_ROOT / "references" / "orchestration-interface.md").read_text(encoding="utf-8")
+        self.assertIn("评估阶段适用性", orchestrator)
+        self.assertIn("管理阶段门", orchestrator)
+        self.assertIn("session-coordinate", orchestrator)
         self.assertIn("route_change_request", orchestrator)
-        self.assertNotIn("选择最短充分路线", orchestrator)
-        self.assertIn("不得增加、删除或改写阶段及硬依赖", interface)
+        self.assertIn("选择最短充分路线", orchestrator)
+        self.assertIn("不得在编译任务图时临时增加、删除或改写阶段", interface)
         self.assertIn("coordination_status: Completed", interface)
 
     def test_development_boundary_excludes_release_and_operations(self) -> None:
@@ -265,15 +267,15 @@ class SuiteContractTests(unittest.TestCase):
         self.assertFalse((SUITE_ROOT / "dev-ops").exists())
         self.assertFalse((SUITE_ROOT / ".claude" / "skills" / "dev-rel").exists())
         self.assertFalse((SUITE_ROOT / ".claude" / "skills" / "dev-ops").exists())
-        lifecycle = (LC_ROOT / "references" / "lifecycle-state-model.md").read_text(encoding="utf-8")
+        lifecycle = (ORCH_ROOT / "references" / "lifecycle-state-model.md").read_text(encoding="utf-8")
         self.assertNotIn("| G6 |", lifecycle)
         self.assertNotIn("| G7 |", lifecycle)
-        self.assertIn("G0至G5", (LC_ROOT / "SKILL.md").read_text(encoding="utf-8"))
+        self.assertIn("G0 至 G5", (ORCH_ROOT / "AGENT.md").read_text(encoding="utf-8"))
 
     def test_test_design_and_automation_have_explicit_lifecycle_gates(self) -> None:
         readme = (SUITE_ROOT / "README.md").read_text(encoding="utf-8")
-        lifecycle = (LC_ROOT / "references" / "lifecycle-state-model.md").read_text(encoding="utf-8")
-        artifact = (LC_ROOT / "references" / "artifact-contract.md").read_text(encoding="utf-8")
+        lifecycle = (ORCH_ROOT / "references" / "lifecycle-state-model.md").read_text(encoding="utf-8")
+        artifact = (ORCH_ROOT / "references" / "artifact-contract.md").read_text(encoding="utf-8")
         test_skill = (SUITE_ROOT / "dev-test" / "SKILL.md").read_text(encoding="utf-8")
         impl_skill = (SUITE_ROOT / "dev-impl" / "SKILL.md").read_text(encoding="utf-8")
         review_skill = (SUITE_ROOT / "dev-cr" / "SKILL.md").read_text(encoding="utf-8")
@@ -289,8 +291,8 @@ class SuiteContractTests(unittest.TestCase):
 
     def test_validation_closure_uses_gate_without_parallel_report_artifact(self) -> None:
         readme = (SUITE_ROOT / "README.md").read_text(encoding="utf-8")
-        lifecycle = (LC_ROOT / "references" / "lifecycle-state-model.md").read_text(encoding="utf-8")
-        artifact = (LC_ROOT / "references" / "artifact-contract.md").read_text(encoding="utf-8")
+        lifecycle = (ORCH_ROOT / "references" / "lifecycle-state-model.md").read_text(encoding="utf-8")
+        artifact = (ORCH_ROOT / "references" / "artifact-contract.md").read_text(encoding="utf-8")
         validation_skill = (SUITE_ROOT / "dev-val" / "SKILL.md").read_text(encoding="utf-8")
         output_contract = (SUITE_ROOT / "dev-val" / "references" / "output-contracts.md").read_text(encoding="utf-8")
         outline = (SUITE_ROOT / "dev-val" / "references" / "outline.md").read_text(encoding="utf-8")
@@ -306,8 +308,8 @@ class SuiteContractTests(unittest.TestCase):
 
     def test_implementation_delivery_summary_is_a_read_only_projection(self) -> None:
         readme = (SUITE_ROOT / "README.md").read_text(encoding="utf-8")
-        artifact = (LC_ROOT / "references" / "artifact-contract.md").read_text(encoding="utf-8")
-        lifecycle = (LC_ROOT / "references" / "lifecycle-state-model.md").read_text(encoding="utf-8")
+        artifact = (ORCH_ROOT / "references" / "artifact-contract.md").read_text(encoding="utf-8")
+        lifecycle = (ORCH_ROOT / "references" / "lifecycle-state-model.md").read_text(encoding="utf-8")
         impl_skill = (SUITE_ROOT / "dev-impl" / "SKILL.md").read_text(encoding="utf-8")
         outline = (SUITE_ROOT / "dev-impl" / "references" / "outline.md").read_text(encoding="utf-8")
         model = (SUITE_ROOT / "dev-impl" / "references" / "implementation-unit.md").read_text(encoding="utf-8")

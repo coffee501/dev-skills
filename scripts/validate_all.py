@@ -11,8 +11,8 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-TEST_SKILLS = (
-    "dev-lc", "dev-cr", "dev-ctx", "dev-fia", "dev-hld", "dev-impl",
+TEST_MODULES = (
+    "dev-cr", "dev-ctx", "dev-fia", "dev-hld", "dev-impl",
     "dev-lld", "dev-orch", "dev-req", "dev-test", "dev-val",
 )
 
@@ -37,8 +37,8 @@ def require_node_version(node: str) -> None:
 
 def main() -> int:
     python = sys.executable
-    run([python, "dev-lc/scripts/validate_suite.py"])
-    for skill in TEST_SKILLS:
+    run([python, "dev-orch/scripts/validate_suite.py"])
+    for skill in TEST_MODULES:
         tests = ROOT / skill / "tests"
         if tests.is_dir():
             run([python, "-m", "unittest", "discover", "-s", f"{skill}/tests", "-p", "test_*.py", "-v"])

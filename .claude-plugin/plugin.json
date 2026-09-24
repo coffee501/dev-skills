@@ -4,7 +4,7 @@
   "author": {
     "name": "Dev Skills Maintainers"
   },
-  "version": "8.0.2",
+  "version": "9.0.0",
   "mcpServers": {
     "dev_state": {
       "command": "node",
@@ -28,7 +28,6 @@
     "./.claude/skills/dev-cr",
     "./.claude/skills/dev-test",
     "./.claude/skills/dev-val",
-    "./.claude/skills/dev-lc",
     "./.claude/skills/dev-orch"
   ]
 }

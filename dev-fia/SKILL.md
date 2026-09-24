@@ -9,7 +9,7 @@ description: "将后端契约转化为场景化的前端接口对接指引。"
 
 ## 接入 Dev 生命周期
 
-复用当前 `CHG`，以版本化 `FIA` 关联 `REQ/RULE/AC`、`API/EVT`、机器可读契约、实现版本和消费方范围。需要公共字段、状态与追踪规则时读取 [产物协议](../dev-lc/references/artifact-contract.md)；发生责任转移或缺口返回时读取 [交接协议](../dev-lc/references/handoff-contract.md)；上游契约变化时读取 [失效传播规则](../dev-lc/references/invalidation-rules.md)。
+复用当前 `CHG`，以版本化 `FIA` 关联 `REQ/RULE/AC`、`API/EVT`、机器可读契约、实现版本和消费方范围。需要公共字段、状态与追踪规则时读取 [产物协议](../dev-orch/references/artifact-contract.md)；发生责任转移或缺口返回时读取 [交接协议](../dev-orch/references/handoff-contract.md)；上游契约变化时读取 [失效传播规则](../dev-orch/references/invalidation-rules.md)。
 
 共享协议不可用时可以独立生成或评审对接文档，但必须使用局部临时编号，记录来源、契约身份、适用范围、风险和未知项；不得宣称正式基线、全局唯一编号、阶段门或标准 `HOF` 已被确认。
 

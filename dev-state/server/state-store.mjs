@@ -487,21 +487,30 @@ export class StateStore {
   }
 
   workPrepare(input) {
-    const inputVersions = arrayOrEmpty(input.input_versions, "input_versions");
-    const payload = {
-      skill: requireId(input.skill, "skill"),
-      input_versions: inputVersions,
-      input_fingerprint: digest(canonicalJson(inputVersions)),
-      owned_paths: arrayOrEmpty(input.owned_paths, "owned_paths"),
-      owned_artifacts: arrayOrEmpty(input.owned_artifacts, "owned_artifacts"),
-      expected_outputs: arrayOrEmpty(input.expected_outputs, "expected_outputs"),
-      constraints: objectOrEmpty(input.constraints, "constraints"),
-      attempt: 0,
-      agent_id: null,
-    };
-    return this.putObject({
-      ...input, object_type: "WIT", object_id: requireId(input.work_item_id, "work_item_id"),
-      status: "Prepared", payload,
+    return this.#transaction(() => {
+      const inputVersions = arrayOrEmpty(input.input_versions, "input_versions");
+      const lifecycleBinding = this.#lifecycleRouteBinding(input);
+      const payload = {
+        skill: requireId(input.skill, "skill"),
+        ...lifecycleBinding,
+        input_versions: inputVersions,
+        input_fingerprint: digest(canonicalJson(inputVersions)),
+        owned_paths: arrayOrEmpty(input.owned_paths, "owned_paths"),
+        owned_artifacts: arrayOrEmpty(input.owned_artifacts, "owned_artifacts"),
+        expected_outputs: arrayOrEmpty(input.expected_outputs, "expected_outputs"),
+        constraints: objectOrEmpty(input.constraints, "constraints"),
+        attempt: 0,
+        agent_id: null,
+      };
+      const workItemId = requireId(input.work_item_id, "work_item_id");
+      const current = this.getObject({ ...input, object_type: "WIT", object_id: workItemId });
+      if (current) {
+        throw new DevStateError("INVALID_TRANSITION", "work item " + workItemId + " already exists in " + current.status);
+      }
+      return this.#putObjectInTransaction({
+        ...input, object_type: "WIT", object_id: workItemId,
+        status: "Prepared", payload,
+      });
     });
   }
 
@@ -514,37 +523,58 @@ export class StateStore {
   }
 
   workClaim(input) {
-    const current = this.#requireObject(input, "WIT", input.work_item_id);
-    if (!new Set(["Prepared", "Blocked"]).has(current.status)) {
-      throw new DevStateError("INVALID_TRANSITION", `cannot claim work item in ${current.status}`);
-    }
-    const agentId = requireString(input.agent_id, "agent_id");
-    return this.putObject({
-      ...input, object_type: "WIT", object_id: input.work_item_id, status: "Running",
-      payload: { ...current.payload, agent_id: agentId, attempt: (current.payload.attempt || 0) + 1, started_at: this.clock() },
+    return this.#transaction(() => {
+      const current = this.#requireObject(input, "WIT", input.work_item_id);
+      if (!new Set(["Prepared", "Blocked"]).has(current.status)) {
+        throw new DevStateError("INVALID_TRANSITION", `cannot claim work item in ${current.status}`);
+      }
+      this.#assertCurrentRouteBinding(input, current);
+      const agentId = requireString(input.agent_id, "agent_id");
+      return this.#putObjectInTransaction({
+        ...input, object_type: "WIT", object_id: input.work_item_id, status: "Running",
+        payload: { ...current.payload, agent_id: agentId, attempt: (current.payload.attempt || 0) + 1, started_at: this.clock() },
+      });
     });
   }
 
   workComplete(input) {
-    const current = this.#requireObject(input, "WIT", input.work_item_id);
-    if (current.status !== "Running") throw new DevStateError("INVALID_TRANSITION", `cannot complete work item in ${current.status}`);
-    const agentId = requireString(input.agent_id, "agent_id");
-    if (current.payload.agent_id !== agentId) throw new DevStateError("AGENT_MISMATCH", "agent_id does not own this work item");
-    const fingerprint = requireString(input.input_fingerprint, "input_fingerprint");
-    if (current.payload.input_fingerprint !== fingerprint) {
-      throw new DevStateError("STALE_INPUT", "work result input fingerprint does not match current work item");
-    }
-    const status = requireString(input.status, "status");
-    if (!WORK_TERMINAL.has(status)) throw new DevStateError("INVALID_TRANSITION", `unsupported terminal status ${status}`);
-    return this.putObject({
-      ...input, object_type: "WIT", object_id: input.work_item_id, status,
-      payload: {
-        ...current.payload,
-        outputs: arrayOrEmpty(input.outputs, "outputs"),
-        evidence: arrayOrEmpty(input.evidence, "evidence"),
-        result: objectOrEmpty(input.result, "result"),
-        completed_at: this.clock(),
-      },
+    return this.#transaction(() => {
+      const current = this.#requireObject(input, "WIT", input.work_item_id);
+      if (current.status !== "Running") throw new DevStateError("INVALID_TRANSITION", "cannot complete work item in " + current.status);
+      const agentId = requireString(input.agent_id, "agent_id");
+      if (current.payload.agent_id !== agentId) throw new DevStateError("AGENT_MISMATCH", "agent_id does not own this work item");
+      const fingerprint = requireString(input.input_fingerprint, "input_fingerprint");
+      if (current.payload.input_fingerprint !== fingerprint) {
+        throw new DevStateError("STALE_INPUT", "work result input fingerprint does not match current work item");
+      }
+      const status = requireString(input.status, "status");
+      if (!WORK_TERMINAL.has(status)) throw new DevStateError("INVALID_TRANSITION", "unsupported terminal status " + status);
+      if (status === "Completed") this.#assertCurrentRouteBinding(input, current);
+      const completedAt = this.clock();
+      const completed = this.#putObjectInTransaction({
+        ...input, object_type: "WIT", object_id: input.work_item_id, status,
+        payload: {
+          ...current.payload,
+          outputs: arrayOrEmpty(input.outputs, "outputs"),
+          evidence: arrayOrEmpty(input.evidence, "evidence"),
+          result: objectOrEmpty(input.result, "result"),
+          completed_at: completedAt,
+        },
+      });
+      const runs = this.#agentRunsForWork(input, input.work_item_id, agentId, "Running");
+      for (const run of runs) {
+        if (run.payload.input_fingerprint === fingerprint) {
+          this.#putObjectInTransaction({
+            ...input,
+            object_type: "AGENT_RUN",
+            object_id: run.object_id,
+            expected_version: run.version,
+            status,
+            payload: { ...run.payload, completed_at: completedAt, work_status: status },
+          });
+        }
+      }
+      return completed;
     });
   }
 
@@ -563,7 +593,7 @@ export class StateStore {
     }
     return this.putObject({
       ...input, object_type: "AGENT_RUN", object_id: requireId(input.run_id || `RUN-${randomUUID()}`, "run_id"),
-      status: input.status || "Running",
+      status: requireStatus(input.status || "Running", new Set(["Running"]), "status"),
       payload: {
         agent_id: agentId,
         work_item_id: requireId(input.work_item_id, "work_item_id"),
@@ -580,6 +610,77 @@ export class StateStore {
     return rows.filter((item) => (
       (workItemId === null || item.payload.work_item_id === workItemId)
       && (agentId === null || item.payload.agent_id === agentId)
+    ));
+  }
+
+  #lifecycleRouteBinding(input) {
+    const hasAnyRouteField = input.lifecycle_route_ref !== undefined
+      || input.route_version !== undefined
+      || input.node_id !== undefined;
+    const current = this.lifecycleGet(input);
+    if (!current && !hasAnyRouteField) {
+      throw new DevStateError("INVALID_ARGUMENT", "Current lifecycle view and route binding are required to prepare work item");
+    }
+    const lifecycleRouteRef = requireString(input.lifecycle_route_ref, "lifecycle_route_ref");
+    const routeVersion = requireVersion(input.route_version, "route_version");
+    const nodeId = requireId(input.node_id, "node_id");
+    if (!current) {
+      throw new DevStateError("STALE_ROUTE", "lifecycle route binding was provided but no Current lifecycle view exists");
+    }
+    this.#assertRouteMatchesCurrent(input, current, { lifecycle_route_ref: lifecycleRouteRef, route_version: routeVersion, node_id: nodeId });
+    return { lifecycle_route_ref: lifecycleRouteRef, route_version: routeVersion, node_id: nodeId };
+  }
+
+  #assertCurrentRouteBinding(input, workItem) {
+    const binding = {
+      lifecycle_route_ref: workItem.payload.lifecycle_route_ref,
+      route_version: workItem.payload.route_version,
+      node_id: workItem.payload.node_id,
+    };
+    if (binding.lifecycle_route_ref === undefined && binding.route_version === undefined && binding.node_id === undefined) {
+      throw new DevStateError("STALE_ROUTE", "work item has no lifecycle route binding; replan it under the Current lifecycle view");
+    }
+    const current = this.lifecycleGet(input);
+    if (!current) {
+      throw new DevStateError("STALE_ROUTE", "work item route binding exists but no Current lifecycle view exists");
+    }
+    this.#assertRouteMatchesCurrent({ ...input, skill: workItem.payload.skill }, current, binding);
+  }
+
+  #assertRouteMatchesCurrent(input, current, binding) {
+    const lifecycleRouteRef = requireString(binding.lifecycle_route_ref, "lifecycle_route_ref");
+    const routeVersion = requireVersion(binding.route_version, "route_version");
+    const nodeId = requireId(binding.node_id, "node_id");
+    if (routeVersion !== current.version) {
+      throw new DevStateError("STALE_ROUTE", "route_version does not match the Current lifecycle view", { current });
+    }
+    const shortRef = current.object_id + "@v" + current.version;
+    if (lifecycleRouteRef !== current.state_uri && lifecycleRouteRef !== shortRef) {
+      throw new DevStateError("STALE_ROUTE", "lifecycle_route_ref does not match the Current lifecycle view", { current });
+    }
+    const route = Array.isArray(current.payload.route) ? current.payload.route : [];
+    if (route.length === 0) {
+      throw new DevStateError("STALE_ROUTE", "Current lifecycle view has no route nodes", { current });
+    }
+    const node = route.find((item) => item?.node_id === nodeId);
+    if (!node) {
+      throw new DevStateError("STALE_ROUTE", "node_id " + nodeId + " does not exist in the Current lifecycle route", { current });
+    }
+    if (node.skill !== undefined && node.skill !== input.skill) {
+      throw new DevStateError("STALE_ROUTE", "node_id " + nodeId + " is bound to " + node.skill + ", not " + input.skill, { current });
+    }
+  }
+
+  #agentRunsForWork(input, workItemId, agentId, status) {
+    const workspaceId = requireString(input.workspace_id, "workspace_id");
+    const changeId = requireId(input.change_id, "change_id");
+    const rows = this.db.prepare(`
+      SELECT * FROM objects WHERE workspace_id = ? AND change_id = ? AND object_type = 'AGENT_RUN' AND status = ?
+    `).all(workspaceId, changeId, requireString(status, "status"));
+    const normalizedWorkItemId = requireId(workItemId, "work_item_id");
+    const normalizedAgentId = requireString(agentId, "agent_id");
+    return rows.map((row) => this.#objectEnvelope(row)).filter((item) => (
+      item.payload.work_item_id === normalizedWorkItemId && item.payload.agent_id === normalizedAgentId
     ));
   }
 

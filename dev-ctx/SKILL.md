@@ -18,9 +18,9 @@ description: "根据代码和证据梳理现有后端与集成行为。"
 
 ## 接入 Dev 生命周期
 
-按 [产物协议](../dev-lc/references/artifact-contract.md) 输出 `CTX/CTXF/CTXP/CTXG`。发生正式责任转移、上下文缺口阻塞、
-仓外证据请求或失效通知时，按 [交接协议](../dev-lc/references/handoff-contract.md) 创建 `Prepared HOF`。代码、契约、配置、
-数据模型、部署或运行证据变化时，按 [失效传播规则](../dev-lc/references/invalidation-rules.md) 重新评估上下文新鲜度。
+按 [产物协议](../dev-orch/references/artifact-contract.md) 输出 `CTX/CTXF/CTXP/CTXG`。发生正式责任转移、上下文缺口阻塞、
+仓外证据请求或失效通知时，按 [交接协议](../dev-orch/references/handoff-contract.md) 创建 `Prepared HOF`。代码、契约、配置、
+数据模型、部署或运行证据变化时，按 [失效传播规则](../dev-orch/references/invalidation-rules.md) 重新评估上下文新鲜度。
 
 共享协议不可用时仍可完成定向理解、项目基线、增量刷新和上下文评审，使用本地临时标识并保留范围、版本、来源、
 适用对象、风险、证据和时间；不得宣称正式 `Eligible CTX`、全局编号或标准HOF已经确认。

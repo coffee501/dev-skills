@@ -13,9 +13,9 @@ description: "从需求和已有实现中定义后端或集成需求。不得用
 
 按需读取 Dev 体系协议：
 
-- 需要正式产物信封、编号或追踪链时，读取 [产物协议](../dev-lc/references/artifact-contract.md)。
-- 发生责任转移、阶段推进、阻塞返回或失效通知时，读取 [交接协议](../dev-lc/references/handoff-contract.md)。
-- 需求语义变化时，读取 [失效传播规则](../dev-lc/references/invalidation-rules.md)，只输出潜在受影响对象，不直接改写下游状态或证据。
+- 需要正式产物信封、编号或追踪链时，读取 [产物协议](../dev-orch/references/artifact-contract.md)。
+- 发生责任转移、阶段推进、阻塞返回或失效通知时，读取 [交接协议](../dev-orch/references/handoff-contract.md)。
+- 需求语义变化时，读取 [失效传播规则](../dev-orch/references/invalidation-rules.md)，只输出潜在受影响对象，不直接改写下游状态或证据。
 
 如果上述套件协议不可用，继续完成需求分析，但将正式编号、跨阶段状态、交接和失效结论标记为待确认，不虚构协议内容或宣称完成正式交接。
 

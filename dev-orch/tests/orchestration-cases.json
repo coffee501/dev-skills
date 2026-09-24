@@ -4,12 +4,12 @@
     {
       "id": "single-stage-direct-route",
       "mode": "direct",
-      "lifecycle_route_ref": "LCV-PENDING-DIRECT@v1",
+      "lifecycle_route_ref": null,
       "route_change_requested": false,
       "route": ["dev-test"],
       "parallel_groups": [],
       "requires_explicit_authorization": false,
-      "invariants": ["does not create unnecessary orchestration", "direct routing is derived from the referenced LC route", "specialist skill owns the output"]
+      "invariants": ["does not create unnecessary orchestration", "orchestrator actively invokes dev-test", "specialist skill owns the output"]
     },
     {
       "id": "brownfield-end-to-end",
@@ -19,7 +19,7 @@
       "route": ["dev-ctx", "dev-req", "dev-test", "dev-hld", "dev-lld", "dev-impl", "dev-cr", "dev-val"],
       "parallel_groups": [["dev-test", "dev-hld"], ["dev-test", "dev-lld"]],
       "requires_explicit_authorization": false,
-      "invariants": ["state is reconstructed from the referenced LC route plus ORCH work items", "ORCH does not add remove or reinterpret LC stages", "test design starts from the G1 requirement baseline and is refined against versioned design inputs", "test-automation implementation and review complete before formal G5 when applicable"]
+      "invariants": ["state is reconstructed from the dev-orch-owned lifecycle route plus work items", "execution projection does not add remove or reinterpret stages in the lifecycle route", "test design starts from the G1 requirement baseline and is refined against versioned design inputs", "test-automation implementation and review complete before formal G5 when applicable"]
     },
     {
       "id": "migration-development-readiness",
@@ -39,7 +39,7 @@
       "route": ["dev-lld", "dev-req", "dev-lld"],
       "parallel_groups": [],
       "requires_explicit_authorization": false,
-      "invariants": ["rejection reason and supersession are preserved", "ORCH requests LC to produce a successor route", "only affected branches are recompiled"]
+      "invariants": ["rejection reason and supersession are preserved", "dev-orch creates a successor lifecycle route from the rejection evidence", "only affected branches are recompiled"]
     },
     {
       "id": "input-version-invalidation",
@@ -49,17 +49,17 @@
       "route": ["dev-lld", "dev-test", "dev-impl"],
       "parallel_groups": [["dev-lld", "dev-test"]],
       "requires_explicit_authorization": false,
-      "invariants": ["ORCH stops the affected task and requests LC invalidation assessment before continuation", "ORCH does not rewrite lifecycle status", "old artifacts remain traceable"]
+      "invariants": ["dev-orch stops the affected task and assesses invalidation before continuation", "dev-orch preserves old lifecycle snapshots and creates a successor when required", "old artifacts remain traceable"]
     },
     {
       "id": "depth-limit-fallback",
-      "mode": "route-only",
+      "mode": "session-coordinate",
       "lifecycle_route_ref": "LCV-DEPTH@v1",
       "route_change_requested": false,
       "route": ["dev-req", "dev-hld", "dev-lld"],
       "parallel_groups": [],
       "requires_explicit_authorization": false,
-      "invariants": ["the orchestrator stops dispatching at the configured depth limit", "route-only projects the referenced LC route without redefining it", "the parent session receives bounded task packages"]
+      "invariants": ["the orchestrator stops spawning at the configured depth limit", "current context completes authorized specialist work sequentially", "independent review remains blocked until isolation is available"]
     },
     {
       "id": "external-state-unavailable",
@@ -69,7 +69,7 @@
       "route": ["dev-req", "dev-hld"],
       "parallel_groups": [],
       "requires_explicit_authorization": false,
-      "invariants": ["the orchestrator reports that state was not persisted", "route-only references the non-durable LC snapshot", "no fallback lifecycle directory is created in the project"]
+      "invariants": ["cross-session recovery is required, so route-only reports the persistence gap", "route-only references a clearly marked non-durable pending route", "no fallback lifecycle directory is created in the project"]
     },
     {
       "id": "promotion-boundary",
@@ -99,17 +99,17 @@
       "route": ["dev-ctx", "dev-req", "dev-test", "dev-hld", "dev-lld", "dev-impl", "dev-cr", "dev-val"],
       "parallel_groups": [["dev-test", "dev-hld"], ["dev-test", "dev-lld"]],
       "requires_explicit_authorization": false,
-      "invariants": ["Codex uses native subagents for bounded specialist tasks", "test design starts at G1 and applicable test automation is implemented and reviewed before G5", "state_persistence is none and no project-local state is created", "coordination completion remains separate from LC lifecycle status", "the root orchestrator owns execution integration and result collection"]
+      "invariants": ["Codex uses native subagents for bounded specialist tasks", "test design starts at G1 and applicable test automation is implemented and reviewed before G5", "state_persistence is none and no project-local state is created", "coordination completion remains separate from lifecycle status", "the root orchestrator owns execution integration and result collection"]
     },
     {
       "id": "codex-native-unavailable",
-      "mode": "route-only",
+      "mode": "session-coordinate",
       "lifecycle_route_ref": "LCV-PENDING-NATIVE@v1",
       "route_change_requested": false,
       "route": ["dev-req", "dev-hld", "dev-lld"],
       "parallel_groups": [],
       "requires_explicit_authorization": false,
-      "invariants": ["missing native subagent tools do not become a specialist failure", "the orchestrator returns bounded task packages without claiming execution"]
+      "invariants": ["missing native subagent tools do not become a specialist failure", "current context executes authorized specialist work sequentially", "tasks requiring independent context are blocked until isolation is available"]
     },
     {
       "id": "missing-lifecycle-route",
@@ -120,7 +120,7 @@
       "route": [],
       "parallel_groups": [],
       "requires_explicit_authorization": false,
-      "invariants": ["ORCH does not synthesize an authoritative lifecycle route", "no execution task graph is generated until LC provides a route snapshot"]
+      "invariants": ["dev-orch does not invent an authoritative lifecycle route without sufficient evidence", "no authoritative execution task graph is generated until dev-orch establishes a route snapshot"]
     }
   ]
 }

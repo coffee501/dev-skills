@@ -6,15 +6,14 @@
 
 以下内容只能进入项目外部状态库：
 
-- LC提供的 `CHG/HOF/LCV` 及其历史版本。
+- `dev-orch` 管理的 `CHG/HOF/LCV` 及其历史版本。
 - ORCH拥有的 `WIT` 及其尝试和运行状态。
 - Agent 运行身份、任务认领、尝试次数和阻塞原因。
 - 尚未确认的需求、设计、测试和验证草稿信封。
 - 失效记录、临时验证结果、日志摘要和证据引用。
 - Promotion 准备和确认记录。
 
-语义所有权不因存储位置改变：`CHG/HOF/LCV` 由 `dev-lc` 或有权限责任方创建和版本化；`WIT` 由 `dev-orch`
-管理。ORCH只能保存LC提供的生命周期对象版本和引用，不得借助状态服务改写路线、门禁、交接接受或完成结论。
+语义所有权不因存储位置改变：`CHG/HOF/LCV/WIT` 由 `dev-orch` 按共享协议管理。专业产物及结论归对应 Skill；交接接受、风险接受、阶段门确认和变更关闭必须具有相应责任方的明确证据。
 
 状态根目录按以下优先级解析：
 
@@ -37,7 +36,7 @@ devstate://workspace/{workspace_id}/change/{change_id}/{object_type}/{object_id}
 
 ## 生命周期对象操作
 
-- `change_get`、`lifecycle_get`、`handoff_get/handoff_list` 是不创建、不推进对象的控制面读取接口，供只读调度与恢复使用。
+- `change_get`、`lifecycle_get`、`handoff_get/handoff_list` 是不创建、不推进对象的控制面读取接口，供路线评估与恢复使用。
 - `change_get_or_create` 只复用或创建 `CHG`；后续使用 `change_put` 按 `Draft → Active → Completed/Cancelled/Superseded` 推进，并保留乐观版本控制。终态不得重新打开；归档只附加归档记录，不把状态改成协议外的 `Archived`。
 - `lifecycle_put` 必须使用正式 `LCV-*` 作为 `lifecycle_id`，只接受 `Current/Superseded`。创建后不得原地改写内容；产生后继视图时，以新 `lifecycle_id`、旧ID和旧版本在同一事务中把旧视图置为 `Superseded` 并创建新的 `Current`。输入失效时也只能将旧视图标记为 `Superseded`，不得写入 `Active/NeedsReview` 等其他对象的状态。
 - `handoff_prepare` 必须保存标准交接包的原因、输入、保留行为、决策、未决项、失效项、期望输出和进入条件；来源与目标必须不同。
@@ -45,7 +44,7 @@ devstate://workspace/{workspace_id}/change/{change_id}/{object_type}/{object_id}
   `Acknowledged` 直接调用 `handoff_accept/handoff_reject`，分别保存责任人、时间与证据。后继交接使用
   `handoff_supersede`，不得把接受与拒绝共用一个含糊的决定字段。
 
-状态服务只执行结构、状态和并发边界；`Completed`、`Accepted` 等专业或治理结论仍由 `dev-lc` 校验其正式产物语义与授权证据。
+状态服务只执行结构、状态和并发边界；`dev-orch` 校验治理结论的正式产物语义与授权证据，专业结论由对应 Skill 负责。
 
 ## WIT 工作项
 
@@ -56,6 +55,7 @@ devstate://workspace/{workspace_id}/change/{change_id}/{object_type}/{object_id}
 | `work_item_id` | 稳定 `WIT-*` 编号 |
 | `skill` | 唯一目标专业 Skill |
 | `input_versions` | 版本化输入引用 |
+| `lifecycle_route_ref` / `route_version` / `node_id` | 当前 `LCV.route` 的精确版本和节点；正式调度工作项必须匹配 |
 | `input_fingerprint` | 排序后输入的内容指纹 |
 | `owned_paths` | 允许修改的项目路径；为空表示不授权写项目 |
 | `owned_artifacts` | 责任产物编号 |
@@ -64,9 +64,9 @@ devstate://workspace/{workspace_id}/change/{change_id}/{object_type}/{object_id}
 | `status` | `Prepared/Running/Completed/Blocked/Failed/Cancelled` |
 | `expected_outputs` | 预期产物和证据 |
 
-`work_get/work_list/agent_run_list` 提供中断后的当前任务和运行身份恢复读取。`work_claim` 必须提供当前版本；
-`agent_run_bind` 只允许绑定处于 `Running` 的 WIT，并且必须匹配认领 Agent 和输入指纹；`work_complete` 同样必须匹配
-认领 Agent 和输入指纹。冲突时返回最新对象，不覆盖其他 Agent 的更新。
+`work_prepare` 只创建新 `WIT`；已有编号不得重置为 `Prepared`、清空尝试次数或丢弃结果。正式调度时须绑定当前 `LCV.route` 中存在且 Skill 匹配的节点。`work_claim` 和成功完成 `work_complete` 前重新核对路线版本，旧路线结果不得进入 `Completed`；失效任务按阻塞或取消路径保留证据。重试 `Blocked` 工作项沿用有效的输入和路线绑定；终态工作需要新编号与追踪关系。
+
+`work_get/work_list/agent_run_list` 提供中断后的当前任务和运行身份恢复读取。`work_claim` 必须提供当前版本；`agent_run_bind` 只允许绑定处于 `Running` 的 WIT，并且必须匹配认领 Agent 和输入指纹；`work_complete` 同样必须匹配认领 Agent 和输入指纹，并在同一事务中关闭对应的 `Running` Agent Run。冲突时返回最新对象，不覆盖其他 Agent 的更新。
 
 ## 并发与审计
 
@@ -87,8 +87,8 @@ Promotion 只登记正式产物写入意图，不执行文件复制或写入：
 
 ## 失败与保留
 
-状态服务不可用时不得在项目中创建备用目录。调度器默认退回 `route-only`；只有用户已经要求在当前会话实际推进、宿主具有
-原生子代理、任务不要求中断恢复或正式控制对象持久化时，才允许使用 `session-coordinate`。该模式只保留会话内工作状态，
+状态服务不可用时不得在项目中创建备用目录。调度器默认退回 `route-only`；只有用户已经要求在当前会话实际推进、所需执行权限与独立隔离可用，且任务不要求
+中断恢复或正式控制对象持久化时，才允许使用 `session-coordinate`。该模式只保留会话内工作状态，
 必须报告 `state_persistence: none`，不得生成或宣称已持久化的 `CHG/HOF/LCV/WIT`。需要可恢复状态时仍为 `route-only`。
 
 关闭的持久化变更可以归档但不自动删除，开放变更禁止自动清理。附件和原始日志的保留期由部署策略配置，控制对象及审计记录默认长期保留。

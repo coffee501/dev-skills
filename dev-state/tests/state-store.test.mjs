@@ -19,6 +19,17 @@ function fixture() {
   };
 }
 
+let routeCounter = 0;
+
+function prepareRoute(fx, skill, nodeId = `${skill}-node`) {
+  routeCounter += 1;
+  const lifecycleId = `LCV-WIT-${routeCounter}`;
+  const lcv = fx.store.lifecyclePut({
+    ...fx.common, lifecycle_id: lifecycleId, expected_version: 0, status: "Current",
+    payload: { route: [{ node_id: nodeId, skill, dependencies: [] }] },
+  });
+  return { lifecycle_route_ref: `${lifecycleId}@v${lcv.version}`, route_version: lcv.version, node_id: nodeId };
+}
 test("state home never defaults to the project", () => {
   assert.equal(resolveStateHome({ DEV_SKILLS_STATE_HOME: "D:/state" }, "win32", "C:/Users/test"), "D:\\state");
   assert.equal(resolveStateHome({ CLAUDE_PLUGIN_DATA: "D:/plugin-data" }, "win32", "C:/Users/test"), "D:\\plugin-data\\dev-state");
@@ -171,9 +182,10 @@ test("CHG transitions follow the lifecycle and reject reopening a terminal chang
 test("WIT claim and completion enforce agent and input identity", () => {
   const fx = fixture();
   try {
+    const route = prepareRoute(fx, "dev-lld", "G3-lld");
     const prepared = fx.store.workPrepare({
       ...fx.common, work_item_id: "WIT-001", skill: "dev-lld", input_versions: ["REQ-001@v2"],
-      expected_version: 0, owned_paths: [], owned_artifacts: ["DET-001"], expected_outputs: ["DET"],
+      ...route, expected_version: 0, owned_paths: [], owned_artifacts: ["DET-001"], expected_outputs: ["DET"],
     });
     assert.equal(prepared.status, "Prepared");
     const running = fx.store.workClaim({ ...fx.common, work_item_id: "WIT-001", agent_id: "agent-1", expected_version: 1 });
@@ -197,9 +209,10 @@ test("WIT claim and completion enforce agent and input identity", () => {
 test("durable recovery can read WIT and validated Agent run bindings", () => {
   const fx = fixture();
   try {
+    const route = prepareRoute(fx, "dev-cr", "G4-cr");
     fx.store.workPrepare({
       ...fx.common, work_item_id: "WIT-RECOVER", skill: "dev-cr", input_versions: ["IMP-001@v1"],
-      expected_version: 0, owned_paths: [], owned_artifacts: ["REV-001"], expected_outputs: ["REV"],
+      ...route, expected_version: 0, owned_paths: [], owned_artifacts: ["REV-001"], expected_outputs: ["REV"],
     });
     const running = fx.store.workClaim({
       ...fx.common, work_item_id: "WIT-RECOVER", agent_id: "review-agent", expected_version: 1,
@@ -225,6 +238,210 @@ test("durable recovery can read WIT and validated Agent run bindings", () => {
   } finally { fx.close(); }
 });
 
+test("WIT prepare is create-only and never reopens terminal work", () => {
+  const fx = fixture();
+  try {
+    const route = prepareRoute(fx, "dev-lld", "G3-lld");
+    fx.store.workPrepare({
+      ...fx.common, work_item_id: "WIT-CREATE-ONLY", skill: "dev-lld", input_versions: ["REQ-001@v2"],
+      ...route, expected_version: 0, owned_paths: [], owned_artifacts: ["DET-001"], expected_outputs: ["DET"],
+    });
+    const running = fx.store.workClaim({
+      ...fx.common, work_item_id: "WIT-CREATE-ONLY", agent_id: "agent-1", expected_version: 1,
+    });
+    const completed = fx.store.workComplete({
+      ...fx.common, work_item_id: "WIT-CREATE-ONLY", agent_id: "agent-1",
+      input_fingerprint: running.payload.input_fingerprint, status: "Completed",
+      outputs: ["DET-001@v1"], evidence: ["test"], result: { ok: true }, expected_version: 2,
+    });
+    assert.throws(
+      () => fx.store.workPrepare({
+        ...fx.common, work_item_id: "WIT-CREATE-ONLY", skill: "dev-lld", input_versions: ["REQ-001@v3"],
+        ...route, expected_version: completed.version, owned_paths: [], owned_artifacts: ["DET-002"], expected_outputs: ["DET"],
+      }),
+      (error) => error instanceof DevStateError && error.code === "INVALID_TRANSITION",
+    );
+    const current = fx.store.workGet({ ...fx.common, work_item_id: "WIT-CREATE-ONLY" });
+    assert.equal(current.status, "Completed");
+    assert.equal(current.payload.attempt, 1);
+    assert.deepEqual(current.payload.outputs, ["DET-001@v1"]);
+  } finally { fx.close(); }
+});
+
+test("WIT prepare requires a Current lifecycle route", () => {
+  const fx = fixture();
+  try {
+    assert.throws(
+      () => fx.store.workPrepare({
+        ...fx.common, work_item_id: "WIT-NO-LCV", skill: "dev-lld", input_versions: ["REQ-001@v2"],
+        expected_version: 0, owned_paths: [], owned_artifacts: [], expected_outputs: [],
+      }),
+      (error) => error instanceof DevStateError && error.code === "INVALID_ARGUMENT",
+    );
+  } finally { fx.close(); }
+});
+test("WIT route binding is required for Current LCV and rejects stale route identity", () => {
+  const fx = fixture();
+  try {
+    const lcv = fx.store.lifecyclePut({
+      ...fx.common, lifecycle_id: "LCV-ROUTE", expected_version: 0, status: "Current",
+      payload: { route: [{ node_id: "G3-lld", skill: "dev-lld", dependencies: [] }] },
+    });
+    assert.throws(
+      () => fx.store.workPrepare({
+        ...fx.common, work_item_id: "WIT-NO-ROUTE", skill: "dev-lld", input_versions: ["REQ-001@v2"],
+        expected_version: 0, owned_paths: [], owned_artifacts: [], expected_outputs: [],
+      }),
+      (error) => error instanceof DevStateError && error.code === "INVALID_ARGUMENT",
+    );
+    assert.throws(
+      () => fx.store.workPrepare({
+        ...fx.common, work_item_id: "WIT-STALE-ROUTE", skill: "dev-lld", input_versions: ["REQ-001@v2"],
+        lifecycle_route_ref: "LCV-ROUTE@v1", route_version: lcv.version + 1, node_id: "G3-lld",
+        expected_version: 0, owned_paths: [], owned_artifacts: [], expected_outputs: [],
+      }),
+      (error) => error instanceof DevStateError && error.code === "STALE_ROUTE",
+    );
+    const prepared = fx.store.workPrepare({
+      ...fx.common, work_item_id: "WIT-ROUTE", skill: "dev-lld", input_versions: ["REQ-001@v2"],
+      lifecycle_route_ref: "LCV-ROUTE@v1", route_version: lcv.version, node_id: "G3-lld",
+      expected_version: 0, owned_paths: [], owned_artifacts: [], expected_outputs: [],
+    });
+    assert.equal(prepared.payload.lifecycle_route_ref, "LCV-ROUTE@v1");
+    assert.equal(prepared.payload.route_version, 1);
+    assert.equal(prepared.payload.node_id, "G3-lld");
+  } finally { fx.close(); }
+});
+
+test("WIT claim and successful completion reject superseded route bindings", () => {
+  const fx = fixture();
+  try {
+    const first = fx.store.lifecyclePut({
+      ...fx.common, lifecycle_id: "LCV-OLD", expected_version: 0, status: "Current",
+      payload: { route: [{ node_id: "G4-impl", skill: "dev-impl", dependencies: [] }] },
+    });
+    fx.store.workPrepare({
+      ...fx.common, work_item_id: "WIT-STALE-CLAIM", skill: "dev-impl", input_versions: ["DET-001@v1"],
+      lifecycle_route_ref: "LCV-OLD@v1", route_version: first.version, node_id: "G4-impl",
+      expected_version: 0, owned_paths: [], owned_artifacts: [], expected_outputs: [],
+    });
+    fx.store.lifecyclePut({
+      ...fx.common, lifecycle_id: "LCV-NEW", expected_version: 0, status: "Current",
+      payload: { route: [{ node_id: "G4-impl-v2", skill: "dev-impl", dependencies: [] }] },
+      supersedes_lifecycle_id: "LCV-OLD", supersedes_expected_version: first.version,
+    });
+    assert.throws(
+      () => fx.store.workClaim({
+        ...fx.common, work_item_id: "WIT-STALE-CLAIM", agent_id: "impl-agent", expected_version: 1,
+      }),
+      (error) => error instanceof DevStateError && error.code === "STALE_ROUTE",
+    );
+  } finally { fx.close(); }
+});
+
+test("WIT Completed rejects stale route while Cancelled can close cleanup state", () => {
+  const fx = fixture();
+  try {
+    const first = fx.store.lifecyclePut({
+      ...fx.common, lifecycle_id: "LCV-COMPLETE-OLD", expected_version: 0, status: "Current",
+      payload: { route: [{ node_id: "G4-impl", skill: "dev-impl", dependencies: [] }] },
+    });
+    fx.store.workPrepare({
+      ...fx.common, work_item_id: "WIT-STALE-COMPLETE", skill: "dev-impl", input_versions: ["DET-001@v1"],
+      lifecycle_route_ref: "LCV-COMPLETE-OLD@v1", route_version: first.version, node_id: "G4-impl",
+      expected_version: 0, owned_paths: [], owned_artifacts: [], expected_outputs: [],
+    });
+    const running = fx.store.workClaim({
+      ...fx.common, work_item_id: "WIT-STALE-COMPLETE", agent_id: "impl-agent", expected_version: 1,
+    });
+    fx.store.lifecyclePut({
+      ...fx.common, lifecycle_id: "LCV-COMPLETE-NEW", expected_version: 0, status: "Current",
+      payload: { route: [{ node_id: "G4-impl-v2", skill: "dev-impl", dependencies: [] }] },
+      supersedes_lifecycle_id: "LCV-COMPLETE-OLD", supersedes_expected_version: first.version,
+    });
+    assert.throws(
+      () => fx.store.workComplete({
+        ...fx.common, work_item_id: "WIT-STALE-COMPLETE", agent_id: "impl-agent",
+        input_fingerprint: running.payload.input_fingerprint, status: "Completed", expected_version: 2,
+      }),
+      (error) => error instanceof DevStateError && error.code === "STALE_ROUTE",
+    );
+    const cancelled = fx.store.workComplete({
+      ...fx.common, work_item_id: "WIT-STALE-COMPLETE", agent_id: "impl-agent",
+      input_fingerprint: running.payload.input_fingerprint, status: "Cancelled", expected_version: 2,
+      evidence: ["route superseded"], result: { reason: "stale route cleanup" },
+    });
+    assert.equal(cancelled.status, "Cancelled");
+  } finally { fx.close(); }
+});
+test("legacy WIT without route binding cannot be claimed or completed", () => {
+  const fx = fixture();
+  try {
+    prepareRoute(fx, "dev-impl", "G4-impl");
+    fx.store.putObject({
+      ...fx.common, object_type: "WIT", object_id: "WIT-LEGACY-PREPARED",
+      status: "Prepared", expected_version: 0, payload: { skill: "dev-impl", attempt: 0 },
+    });
+    assert.throws(
+      () => fx.store.workClaim({
+        ...fx.common, work_item_id: "WIT-LEGACY-PREPARED", agent_id: "impl-agent", expected_version: 1,
+      }),
+      (error) => error instanceof DevStateError && error.code === "STALE_ROUTE",
+    );
+    fx.store.putObject({
+      ...fx.common, object_type: "WIT", object_id: "WIT-LEGACY-RUNNING",
+      status: "Running", expected_version: 0,
+      payload: { skill: "dev-impl", agent_id: "impl-agent", input_fingerprint: "legacy-input" },
+    });
+    assert.throws(
+      () => fx.store.workComplete({
+        ...fx.common, work_item_id: "WIT-LEGACY-RUNNING", agent_id: "impl-agent",
+        input_fingerprint: "legacy-input", status: "Completed", expected_version: 1,
+      }),
+      (error) => error instanceof DevStateError && error.code === "STALE_ROUTE",
+    );
+    const cancelled = fx.store.workComplete({
+      ...fx.common, work_item_id: "WIT-LEGACY-RUNNING", agent_id: "impl-agent",
+      input_fingerprint: "legacy-input", status: "Cancelled", expected_version: 1,
+      evidence: ["legacy WIT requires replanning"],
+    });
+    assert.equal(cancelled.status, "Cancelled");
+  } finally { fx.close(); }
+});
+test("WIT completion atomically closes matching running Agent runs", () => {
+  const fx = fixture();
+  try {
+    const route = prepareRoute(fx, "dev-impl", "G4-impl");
+    fx.store.workPrepare({
+      ...fx.common, work_item_id: "WIT-RUN-CLOSE", skill: "dev-impl", input_versions: ["DET-001@v1"],
+      ...route, expected_version: 0, owned_paths: [], owned_artifacts: ["IMP-001"], expected_outputs: ["IMP"],
+    });
+    const running = fx.store.workClaim({
+      ...fx.common, work_item_id: "WIT-RUN-CLOSE", agent_id: "impl-agent", expected_version: 1,
+    });
+    fx.store.agentRunBind({
+      ...fx.common, run_id: "RUN-CLOSE", work_item_id: "WIT-RUN-CLOSE", agent_id: "impl-agent",
+      input_fingerprint: running.payload.input_fingerprint, expected_version: 0, details: { host: "local" },
+    });
+    fx.store.workComplete({
+      ...fx.common, work_item_id: "WIT-RUN-CLOSE", agent_id: "impl-agent",
+      input_fingerprint: running.payload.input_fingerprint, status: "Completed",
+      outputs: ["IMP-001@v1"], evidence: ["test"], expected_version: 2,
+    });
+    const runs = fx.store.agentRunList({ ...fx.common, work_item_id: "WIT-RUN-CLOSE" });
+    assert.equal(runs.length, 1);
+    assert.equal(runs[0].status, "Completed");
+    assert.equal(runs[0].payload.work_status, "Completed");
+    assert.equal(fx.store.agentRunList({ ...fx.common, status: "Running" }).length, 0);
+    assert.throws(
+      () => fx.store.agentRunBind({
+        ...fx.common, run_id: "RUN-LATE", work_item_id: "WIT-RUN-CLOSE", agent_id: "impl-agent",
+        input_fingerprint: running.payload.input_fingerprint, expected_version: 0,
+      }),
+      (error) => error instanceof DevStateError && error.code === "INVALID_TRANSITION",
+    );
+  } finally { fx.close(); }
+});
 test("invalidation updates targets atomically", () => {
   const fx = fixture();
   try {

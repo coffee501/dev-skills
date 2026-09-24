@@ -11,7 +11,7 @@ description: "设计风险驱动、可追踪的后端与系统集成测试用例
 
 复用输入中的正式 `CHG`；没有权威编号时使用临时 `CHG-PENDING-001`。测试产物记录来源版本、适用实现、契约、数据和环境，不把旧证据自动用于新的变更范围。
 
-需要统一追踪时读取 [产物协议](../dev-lc/references/artifact-contract.md)；将执行任务交给验证流程或将语义缺口返回上游时读取 [交接协议](../dev-lc/references/handoff-contract.md)；需求、设计、实现、环境或预期变化时读取 [失效传播规则](../dev-lc/references/invalidation-rules.md)。测试设计从G1开始：基于 `REQ/RULE/AC` 建立 `TSC/TC Draft`，在G2/G3随架构、契约、数据和 `VAL/DVAL` 细化；不等待实现完成才启动。测试设计基线、适用的自动化实现就绪、执行就绪和验证通过遵循 [状态与阶段门](../dev-lc/references/lifecycle-state-model.md)，保持相互独立。
+需要统一追踪时读取 [产物协议](../dev-orch/references/artifact-contract.md)；将执行任务交给验证流程或将语义缺口返回上游时读取 [交接协议](../dev-orch/references/handoff-contract.md)；需求、设计、实现、环境或预期变化时读取 [失效传播规则](../dev-orch/references/invalidation-rules.md)。测试设计从G1开始：基于 `REQ/RULE/AC` 建立 `TSC/TC Draft`，在G2/G3随架构、契约、数据和 `VAL/DVAL` 细化；不等待实现完成才启动。测试设计基线、适用的自动化实现就绪、执行就绪和验证通过遵循 [状态与阶段门](../dev-orch/references/lifecycle-state-model.md)，保持相互独立。
 
 共享协议不可用时仍可独立完成测试诊断、设计、评审、回归选择和执行准备，使用本地测试标识并保留来源、适用范围、
 风险和证据；不得宣称正式全局编号、G5、自动化门禁或标准HOF已经确认。
@@ -92,7 +92,7 @@ P0/P1/P2 只用于问题严重度，不用于测试优先级。测试场景和�
 - 创建完整测试设计或确定文档结构时，读取 [references/outline.md](references/outline.md)。
 - 生成具体测试场景、用例、步骤、数据和预期结果时，读取 [references/test-case-model.md](references/test-case-model.md)。
 - 分析状态、规则、边界、组合和覆盖缺口时，读取 [references/coverage-model.md](references/coverage-model.md)。
-- 新增测试层、夹具、数据分区、自动化抽象或拆分大量用例时，读取 [复杂度与拆分治理](../dev-lc/references/complexity-governance.md)。
+- 新增测试层、夹具、数据分区、自动化抽象或拆分大量用例时，读取 [复杂度与拆分治理](../dev-orch/references/complexity-governance.md)。
 - 已有功能变更、缺陷修复、迁移、下线或混合版本时，读取 [references/compatibility-regression.md](references/compatibility-regression.md)。
 - 存在安全、性能、可靠性、容量、容灾、合规、敏感数据、多租户、外部暴露、不可逆副作用、可观测性目标或明确风险时，读取 [references/non-functional-testing.md](references/non-functional-testing.md)。
 - 生成或交换正式 `TC/AUT` 时读取 [references/output-contracts.md](references/output-contracts.md)，并使用 `scripts/validate_test_artifact.py` 校验JSON最低契约。

@@ -11,7 +11,7 @@ description: "将需求与架构转化为可执行的后端与集成详细设计
 
 复用当前变更的 `CHG`，没有权威编号时只使用临时 `CHG-PENDING-001`。详细设计产物通过版本化信封关联 `REQ/AC/DEC/MOD/FLOW`，并保持 `DET/DDEC/DATA/MIG/API/EVT/JOB/CFG/DVAL` 编号稳定。
 
-需要产物和追踪规则时读取 [产物协议](../dev-lc/references/artifact-contract.md)；向实现、前端接口对接和测试设计交接时读取 [交接协议](../dev-lc/references/handoff-contract.md)；设计、契约或实现事实变化时读取 [失效传播规则](../dev-lc/references/invalidation-rules.md)。`VAL/DVAL` 的非 `Planned` 状态必须由适用版本和环境中的有效执行证据支持，详细设计不得自行宣布验证通过。
+需要产物和追踪规则时读取 [产物协议](../dev-orch/references/artifact-contract.md)；向实现、前端接口对接和测试设计交接时读取 [交接协议](../dev-orch/references/handoff-contract.md)；设计、契约或实现事实变化时读取 [失效传播规则](../dev-orch/references/invalidation-rules.md)。`VAL/DVAL` 的非 `Planned` 状态必须由适用版本和环境中的有效执行证据支持，详细设计不得自行宣布验证通过。
 
 共享协议不可用时仍可独立完成详细设计诊断、设计、评审和实现任务拆分，使用本地临时标识并保留来源、适用范围、
 风险和证据；不得宣称正式G3、全局编号或标准HOF已经确认。
@@ -97,7 +97,7 @@ description: "将需求与架构转化为可执行的后端与集成详细设计
 
 - 创建完整文档、选择章节或图时，读取 [references/outline.md](references/outline.md)。
 - 设计模块、功能或核心程序处理时，读取 [references/implementation-unit.md](references/implementation-unit.md)。
-- 新增抽象、层、类、接口、扩展点或拆分 `DET` 和实施任务时，读取 [复杂度与拆分治理](../dev-lc/references/complexity-governance.md)。
+- 新增抽象、层、类、接口、扩展点或拆分 `DET` 和实施任务时，读取 [复杂度与拆分治理](../dev-orch/references/complexity-governance.md)。
 - 存在已有代码、功能变更、集成、迁移、下线或混合版本时，读取 [references/change-compatibility.md](references/change-compatibility.md)。
 - 评审或执行最终基线检查时，读取 [references/review-checklist.md](references/review-checklist.md)。
 - 只回答局部问题时，不读取无关文件。
