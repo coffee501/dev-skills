@@ -52,9 +52,9 @@ Codex App、CLI 或其他 Codex 宿主可能暴露不同工具集合，以实际
 | 创建专业任务 | `Agent` |
 | 续接或纠偏 | `SendMessage` |
 | 停止失效分支 | `TaskStop` |
-| 外置状态 | `change_* / lifecycle_* / handoff_* / invalidation_apply / work_*` 按证据读写治理与调度状态；`artifact_list/agent_run_list/audit_list` 读取；不授予专业产物写入或晋升工具 |
+| 外置状态 | `change_* / lifecycle_* / handoff_* / invalidation_apply / work_*` 按证据读写治理与调度状态；`artifact_list/artifact_get/agent_run_list/audit_list` 读取；不授予专业产物写入或晋升工具 |
 
-Claude 的 `context: fork`、`agent: dev-orch`、工具白名单和斜杠命令只属于适配层，不得写进工具中立核心协议。
+Claude 的 `dev-orch` Agent 仅有控制对象工具，无项目写入和 `artifact_put` 权限；执行专业工作时分派已注册的 `dev-specialist` Agent，传入单一 Skill、输入版本、文件/产物所有权和停止条件。该专业 Agent 执行校验与产物登记；正式 `dev-cr` 使用与实现不同的实例。若专业 Agent 或工具不可用，保留登记缺口，不把 ORCH 的只读摘要当作已登记产物。Claude 的 `context: fork`、Agent 白名单和斜杠命令只属于适配层，不得写进工具中立核心协议。
 
 ## 无子代理宿主
 

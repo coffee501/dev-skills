@@ -107,7 +107,7 @@ class FiaSkillContractTests(unittest.TestCase):
         self.assertIn("共享协议不可用", skill)
         for name in (
             "source-authority.md", "openapi-baseline.md", "consumer-semantics.md",
-            "compatibility-and-versioning.md", "readiness-checklist.md", "output-template.md",
+            "compatibility-and-versioning.md", "readiness-checklist.md", "outline.md",
             "output-contract.md",
         ):
             self.assertTrue((FIA_ROOT / "references" / name).is_file(), name)

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate DEV-SUITE-7.x and 8.0 lifecycle-control JSON artifacts."""
+"""Validate DEV-SUITE-7.x and 8.x lifecycle-control JSON artifacts."""
 
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Any
 
 
-SUPPORTED_PROTOCOLS = {"DEV-SUITE-7.0", "DEV-SUITE-7.1", "DEV-SUITE-8.0"}
+SUPPORTED_PROTOCOLS = {"DEV-SUITE-7.0", "DEV-SUITE-7.1", "DEV-SUITE-8.0", "DEV-SUITE-8.1"}
 COMMON = {
     "protocol_version", "id", "type", "change", "version", "status", "owner",
     "sources", "applies_to", "risks", "evidence", "updated_at",
@@ -70,11 +70,14 @@ def validate_artifact(document: Any) -> list[str]:
         return [f"unsupported artifact type: {artifact_type!r}"]
 
     errors: list[str] = []
-    missing = sorted((COMMON | rule["required"]) - document.keys())
+    required = COMMON | rule["required"]
+    if artifact_type == "lifecycle-change" and document.get("protocol_version") == "DEV-SUITE-8.1":
+        required = required - {"route", "gates"}
+    missing = sorted(required - document.keys())
     if missing:
         errors.append("missing required fields: " + ", ".join(missing))
     if document.get("protocol_version") not in SUPPORTED_PROTOCOLS:
-        errors.append("protocol_version must be one of: DEV-SUITE-7.0, DEV-SUITE-7.1, DEV-SUITE-8.0")
+        errors.append("protocol_version must be one of: DEV-SUITE-7.0, DEV-SUITE-7.1, DEV-SUITE-8.0, DEV-SUITE-8.1")
     artifact_id = document.get("id")
     if not isinstance(artifact_id, str) or not re.fullmatch(re.escape(rule["prefix"]) + r"(?:PENDING-)?[A-Za-z0-9][A-Za-z0-9._-]*", artifact_id):
         errors.append(f"id must be a non-empty {rule['prefix']} identifier")
@@ -94,6 +97,10 @@ def validate_artifact(document: Any) -> list[str]:
     if artifact_type == "lifecycle-change":
         if document.get("change") != document.get("id"):
             errors.append("lifecycle-change requires change equal to id")
+        if document.get("protocol_version") == "DEV-SUITE-8.1":
+            redundant = sorted({"route", "gates", "lifecycle_route_ref"} & document.keys())
+            if redundant:
+                errors.append("8.1 lifecycle-change contains LCV-owned fields: " + ", ".join(redundant))
         if document.get("status") == "Completed":
             completion = document.get("completion")
             if not isinstance(completion, dict) or not completion.get("confirmed_by") or not _timestamp(completion.get("confirmed_at")):
@@ -104,7 +111,7 @@ def validate_artifact(document: Any) -> list[str]:
     if artifact_type == "handoff":
         if document.get("from") == document.get("to"):
             errors.append("handoff from and to must differ")
-        if document.get("protocol_version") == "DEV-SUITE-8.0" and document.get("status") == "Acknowledged":
+        if document.get("protocol_version") in {"DEV-SUITE-8.0", "DEV-SUITE-8.1"} and document.get("status") == "Acknowledged":
             acknowledgement = document.get("acknowledgement")
             if (
                 not isinstance(acknowledgement, dict)
@@ -127,7 +134,7 @@ def validate_artifact(document: Any) -> list[str]:
                 or not _timestamp(rejection.get("rejected_at"))
             ):
                 errors.append("Rejected handoff requires rejection.reason, rejected_by and rejected_at")
-        if document.get("protocol_version") == "DEV-SUITE-8.0" and document.get("status") == "Superseded":
+        if document.get("protocol_version") in {"DEV-SUITE-8.0", "DEV-SUITE-8.1"} and document.get("status") == "Superseded":
             supersession = document.get("supersession")
             if (
                 not isinstance(supersession, dict)
@@ -142,7 +149,7 @@ def validate_artifact(document: Any) -> list[str]:
     if artifact_type == "lifecycle-view":
         if not _non_empty(document.get("chg_ref")):
             errors.append("lifecycle-view requires non-empty chg_ref")
-        if document.get("protocol_version") == "DEV-SUITE-8.0" and "route" in document:
+        if document.get("protocol_version") in {"DEV-SUITE-8.0", "DEV-SUITE-8.1"} and "route" in document:
             route = document.get("route")
             if not isinstance(route, list):
                 errors.append("lifecycle-view route must be a list")
@@ -156,6 +163,33 @@ def validate_artifact(document: Any) -> list[str]:
                     missing_route_fields = sorted(ROUTE_NODE_FIELDS - node.keys())
                     if missing_route_fields:
                         errors.append(f"route[{index}] missing fields: {', '.join(missing_route_fields)}")
+                    route_kind = node.get("route_kind")
+                    if "route_kind" in node and document.get("protocol_version") != "DEV-SUITE-8.1":
+                        errors.append(f"route[{index}].route_kind requires 8.1")
+                        route_kind = None
+                    elif "route_kind" in node and (
+                        not isinstance(route_kind, str)
+                        or route_kind not in {"design-probe", "design-validation"}
+                    ):
+                        errors.append(f"route[{index}].route_kind is unsupported")
+                    if isinstance(route_kind, str) and route_kind in {"design-probe", "design-validation"}:
+                        expected_skill = "dev-impl" if route_kind == "design-probe" else "dev-val"
+                        expected_outputs = ["probe-evidence"] if route_kind == "design-probe" else ["RUN", "EVD"]
+                        if node.get("stage") != "G3" or node.get("skill") != expected_skill:
+                            errors.append(f"route[{index}] {route_kind} must use G3 and {expected_skill}")
+                        outputs = node.get("expected_outputs")
+                        if (
+                            not isinstance(outputs, list)
+                            or any(not isinstance(item, str) for item in outputs)
+                            or sorted(outputs) != sorted(expected_outputs)
+                        ):
+                            errors.append(f"route[{index}] {route_kind} must only output {', '.join(expected_outputs)}")
+                        design_refs = node.get("design_refs")
+                        if not isinstance(design_refs, list) or not any(
+                            isinstance(ref, str) and re.fullmatch(r"DVAL-[A-Za-z0-9._:-]+@v[1-9][0-9]*", ref)
+                            for ref in design_refs
+                        ):
+                            errors.append(f"route[{index}] {route_kind} requires a versioned DVAL design_ref")
                     forbidden_route_fields = sorted(ORCHESTRATION_ONLY_ROUTE_FIELDS & node.keys())
                     if forbidden_route_fields:
                         errors.append(f"route[{index}] contains orchestration-only fields: {', '.join(forbidden_route_fields)}")
@@ -246,6 +280,21 @@ def validate_artifact(document: Any) -> list[str]:
                 applicable_impls = {
                     node_id for node_id, node in route_details.items()
                     if node.get("skill") == "dev-impl" and node.get("applicability") == "Applicable"
+                    and not (
+                        document.get("protocol_version") == "DEV-SUITE-8.1"
+                        and node.get("route_kind") == "design-probe"
+                    )
+                }
+                design_probes = {
+                    node_id for node_id, node in route_details.items()
+                    if document.get("protocol_version") == "DEV-SUITE-8.1"
+                    and node.get("route_kind") == "design-probe" and node.get("applicability") == "Applicable"
+                }
+                design_validations = {
+                    node_id for node_id, node in route_details.items()
+                    if document.get("protocol_version") == "DEV-SUITE-8.1"
+                    and node.get("route_kind") == "design-validation"
+                    and node.get("applicability") == "Applicable"
                 }
                 review_nodes = {
                     node_id for node_id, node in route_details.items()
@@ -255,6 +304,25 @@ def validate_artifact(document: Any) -> list[str]:
                     node_id for node_id in review_nodes
                     if route_details[node_id].get("applicability") == "Applicable"
                 }
+
+                for probe_id in design_probes:
+                    probe_refs = {
+                        ref for ref in route_details[probe_id].get("design_refs", [])
+                        if isinstance(ref, str)
+                    } if isinstance(route_details[probe_id].get("design_refs"), list) else set()
+                    if not any(
+                        probe_id in ancestors(validation_id)
+                        and probe_refs.intersection(
+                            ref for ref in route_details[validation_id].get("design_refs", [])
+                            if isinstance(ref, str)
+                        )
+                        for validation_id in design_validations
+                        if isinstance(route_details[validation_id].get("design_refs"), list)
+                    ):
+                        errors.append(
+                            f"design-probe route node {probe_id} must lead to a G3 dev-val design-validation "
+                            "node for the same DVAL"
+                        )
 
                 for node_id in applicable_impls:
                     if route_details[node_id].get("stage") != "G4":

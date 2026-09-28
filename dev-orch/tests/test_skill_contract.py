@@ -23,6 +23,16 @@ class DevOrchContractTests(unittest.TestCase):
         self.assertIn("./.claude/skills/dev-orch", plugin["skills"])
         self.assertIn("./.claude/agents/dev-orch.md", plugin["agents"])
 
+    def test_claude_specialist_has_separate_artifact_write_capability(self) -> None:
+        plugin = json.loads((SUITE_ROOT / ".claude-plugin" / "plugin.json").read_text(encoding="utf-8"))
+        self.assertIn("./.claude/agents/dev-specialist.md", plugin["agents"])
+        specialist = (SUITE_ROOT / ".claude" / "agents" / "dev-specialist.md").read_text(encoding="utf-8")
+        orchestrator = (SUITE_ROOT / ".claude" / "agents" / "dev-orch.md").read_text(encoding="utf-8")
+        self.assertIn("mcp__dev_state__artifact_put", specialist)
+        self.assertIn("Write", specialist)
+        self.assertNotIn("mcp__dev_state__artifact_put", orchestrator)
+        self.assertIn("独立评审", specialist)
+
     def test_orchestrator_owns_lifecycle_after_lc_removal(self) -> None:
         skill = (ORCH_ROOT / "AGENT.md").read_text(encoding="utf-8")
         self.assertFalse((SUITE_ROOT / "dev-lc").exists())
@@ -37,6 +47,8 @@ class DevOrchContractTests(unittest.TestCase):
         self.assertIn("$dev-orch", skill)
         self.assertIn("主动加载并执行对应专业 Skill", skill)
         self.assertIn("capability-routing.md", skill)
+        self.assertIn("启动时只读取本文件", skill)
+        self.assertIn("不预读全部协议", skill)
         self.assertIn("outline.md", skill)
         self.assertIn("session-coordinate", skill)
         self.assertIn("durable-coordinate", skill)
@@ -81,6 +93,7 @@ class DevOrchContractTests(unittest.TestCase):
         self.assertIn("../../../dev-orch/AGENT.md", command)
         self.assertIn("../../dev-orch/AGENT.md", agent)
         self.assertIn("开始前完整读取", agent)
+        self.assertIn("启动时只读取技能路由", agent)
         tools = re.search(r"(?m)^tools:\s*(.+)$", agent)
         self.assertIsNotNone(tools)
         allowed = {item.strip() for item in tools.group(1).split(",")}

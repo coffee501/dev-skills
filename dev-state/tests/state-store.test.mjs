@@ -73,6 +73,78 @@ test("workspace, CHG, LCV and audit state stay external", () => {
   } finally { fx.close(); }
 });
 
+test("8.1 lifecycle write rejects invalid route topology before persistence", () => {
+  const fx = fixture();
+  try {
+    const base = {
+      ...fx.common, lifecycle_id: "LCV-STRICT", expected_version: 0, status: "Current",
+    };
+    assert.throws(
+      () => fx.store.lifecyclePut({
+        ...base, payload: { protocol_version: "DEV-SUITE-8.1", route: [
+          { node_id: "a", stage: "G1", skill: "dev-req", applicability: "Applicable",
+            dependencies: ["missing"], entry_conditions: [], expected_outputs: ["REQ"], stop_conditions: [] },
+        ] },
+      }),
+      (error) => error instanceof DevStateError && error.code === "INVALID_ROUTE",
+    );
+    assert.equal(fx.store.lifecycleGet(fx.common), null);
+    const node = (id, stage, skill, dependencies, extra = {}) => ({
+      node_id: id, stage, skill, applicability: "Applicable", dependencies,
+      entry_conditions: [], expected_outputs: [], stop_conditions: [], ...extra,
+    });
+    assert.throws(
+      () => fx.store.lifecyclePut({
+        ...base, payload: { route: [node("requirements", "G1", "dev-req", [])] },
+      }),
+      (error) => error instanceof DevStateError && error.code === "INVALID_ROUTE",
+    );
+    assert.throws(
+      () => fx.store.lifecyclePut({
+        ...base, payload: { protocol_version: "DEV-SUITE-8.1",
+          route: [node("build", "G4", "dev-impl", [])] },
+      }),
+      (error) => error instanceof DevStateError && error.code === "INVALID_ROUTE",
+    );
+    assert.throws(
+      () => fx.store.lifecyclePut({
+        ...base, payload: { protocol_version: "DEV-SUITE-8.1",
+          route: [node("probe", "G3", "dev-impl", [], {
+            route_kind: "design-probe", design_refs: ["DVAL-001@v1"],
+            expected_outputs: ["probe-evidence"],
+          })] },
+      }),
+      (error) => error instanceof DevStateError && error.code === "INVALID_ROUTE",
+    );
+    const valid = fx.store.lifecyclePut({
+      ...base, payload: { protocol_version: "DEV-SUITE-8.1", route: [
+        node("probe", "G3", "dev-impl", [], {
+          route_kind: "design-probe", design_refs: ["DVAL-001@v1"],
+          expected_outputs: ["probe-evidence"],
+        }),
+        node("validate", "G3", "dev-val", ["probe"], {
+          route_kind: "design-validation", design_refs: ["DVAL-001@v1"],
+          expected_outputs: ["EVD", "RUN"],
+        }),
+      ] },
+    });
+    assert.equal(valid.version, 1);
+  } finally { fx.close(); }
+});
+
+test("8.1 CHG write rejects LCV-owned route fields", () => {
+  const fx = fixture();
+  try {
+    assert.throws(
+      () => fx.store.changeGetOrCreate({
+        ...fx.common, payload: { protocol_version: "DEV-SUITE-8.1", route: [] },
+      }),
+      (error) => error instanceof DevStateError && error.code === "INVALID_ARGUMENT",
+    );
+    assert.equal(fx.store.changeGet(fx.common), null);
+  } finally { fx.close(); }
+});
+
 test("remote fingerprint alone does not merge independent clones", () => {
   const root = mkdtempSync(join(tmpdir(), "dev-state-workspace-"));
   const store = new StateStore({ stateHome: join(root, "state") });
@@ -591,5 +663,121 @@ test("promotion confirmation rejects a different target", () => {
       }),
       (error) => error instanceof DevStateError && error.code === "PROMOTION_MISMATCH",
     );
+  } finally { fx.close(); }
+});
+
+test("WIT survives unrelated LCV revisions but rejects dependency changes", () => {
+  const fx = fixture();
+  try {
+    const route = [
+      { node_id: "design", skill: "dev-lld", dependencies: [], expected_outputs: ["DET"] },
+      { node_id: "build", skill: "dev-impl", dependencies: ["design"], expected_outputs: ["IMP"] },
+      { node_id: "review", skill: "dev-cr", dependencies: [] },
+    ];
+    const first = fx.store.lifecyclePut({
+      ...fx.common, lifecycle_id: "LCV-FINGERPRINT-1", expected_version: 0, status: "Current",
+      payload: { summary: "first", route },
+    });
+    const prepared = fx.store.workPrepare({
+      ...fx.common, work_item_id: "WIT-FINGERPRINT", skill: "dev-impl", input_versions: ["DET-1@v1"],
+      lifecycle_route_ref: "LCV-FINGERPRINT-1@v1", route_version: first.version, node_id: "build",
+      expected_version: 0,
+    });
+    assert.match(prepared.payload.route_fingerprint, /^[a-f0-9]{64}$/);
+    const second = fx.store.lifecyclePut({
+      ...fx.common, lifecycle_id: "LCV-FINGERPRINT-2", expected_version: 0, status: "Current",
+      payload: { summary: "clarified", route: [...route.slice(0, 2), { ...route[2], expected_outputs: ["REV"] }] },
+      supersedes_lifecycle_id: first.object_id, supersedes_expected_version: first.version,
+    });
+    const running = fx.store.workClaim({
+      ...fx.common, work_item_id: "WIT-FINGERPRINT", agent_id: "impl-agent", expected_version: 1,
+    });
+    assert.equal(running.status, "Running");
+    fx.store.lifecyclePut({
+      ...fx.common, lifecycle_id: "LCV-FINGERPRINT-3", expected_version: 0, status: "Current",
+      payload: { route: [{ ...route[0], expected_outputs: ["DET", "DVAL"] }, route[1], route[2]] },
+      supersedes_lifecycle_id: second.object_id, supersedes_expected_version: second.version,
+    });
+    assert.throws(() => fx.store.workComplete({
+      ...fx.common, work_item_id: "WIT-FINGERPRINT", agent_id: "impl-agent",
+      input_fingerprint: running.payload.input_fingerprint, status: "Completed", expected_version: 2,
+    }), (error) => error instanceof DevStateError && error.code === "STALE_ROUTE");
+    assert.equal(fx.store.workGet({ ...fx.common, work_item_id: "WIT-FINGERPRINT" }).status, "Running");
+  } finally { fx.close(); }
+});
+
+test("WIT completes after a metadata-only lifecycle revision", () => {
+  const fx = fixture();
+  try {
+    const route = [{ node_id: "build", skill: "dev-impl", dependencies: [] }];
+    const first = fx.store.lifecyclePut({
+      ...fx.common, lifecycle_id: "LCV-META-1", expected_version: 0, status: "Current", payload: { route, summary: "first" },
+    });
+    fx.store.workPrepare({
+      ...fx.common, work_item_id: "WIT-META", skill: "dev-impl", input_versions: ["DET-1@v1"],
+      lifecycle_route_ref: "LCV-META-1@v1", route_version: first.version, node_id: "build", expected_version: 0,
+    });
+    const running = fx.store.workClaim({
+      ...fx.common, work_item_id: "WIT-META", agent_id: "impl-agent", expected_version: 1,
+    });
+    fx.store.lifecyclePut({
+      ...fx.common, lifecycle_id: "LCV-META-2", expected_version: 0, status: "Current",
+      payload: { route, summary: "clarified" },
+      supersedes_lifecycle_id: first.object_id, supersedes_expected_version: first.version,
+    });
+    const completed = fx.store.workComplete({
+      ...fx.common, work_item_id: "WIT-META", agent_id: "impl-agent",
+      input_fingerprint: running.payload.input_fingerprint, status: "Completed", expected_version: 2,
+      outputs: ["IMP-1"], evidence: ["test"],
+    });
+    assert.equal(completed.status, "Completed");
+  } finally { fx.close(); }
+});
+
+test("artifactGet reads exact historical versions beyond auditList window", () => {
+  const fx = fixture();
+  try {
+    let current;
+    for (let version = 0; version < 502; version += 1) {
+      current = fx.store.artifactPut({
+        ...fx.common, artifact_id: "DET-HISTORY", artifact_type: "DET",
+        expected_version: version, status: "Draft", payload: { revision: version + 1 },
+      });
+    }
+    assert.equal(current.version, 502);
+    assert.equal(fx.store.artifactGet({ ...fx.common, artifact_id: "DET-HISTORY" }).version, 502);
+    const first = fx.store.artifactGet({ ...fx.common, artifact_id: "DET-HISTORY", version: 1 });
+    assert.equal(first.payload.revision, 1);
+    assert.equal(first.state_uri.endsWith("@v1"), true);
+    assert.equal(fx.store.artifactGet({ ...fx.common, artifact_id: "DET-HISTORY", version: 503 }), null);
+    assert.equal(fx.store.artifactGet({ ...fx.common, artifact_id: "missing", version: 1 }), null);
+    assert.throws(() => fx.store.artifactGet({ ...fx.common, artifact_id: "DET-HISTORY", version: 0 }),
+      (error) => error instanceof DevStateError && error.code === "INVALID_ARGUMENT");
+  } finally { fx.close(); }
+});
+
+test("legacy route-bound WIT retains strict version checking", () => {
+  const fx = fixture();
+  try {
+    const first = fx.store.lifecyclePut({
+      ...fx.common, lifecycle_id: "LCV-LEGACY-BOUND-1", expected_version: 0, status: "Current",
+      payload: { route: [{ node_id: "build", skill: "dev-impl", dependencies: [] }], summary: "old" },
+    });
+    fx.store.putObject({
+      ...fx.common, object_type: "WIT", object_id: "WIT-LEGACY-BOUND",
+      expected_version: 0, status: "Prepared",
+      payload: {
+        skill: "dev-impl", lifecycle_route_ref: "LCV-LEGACY-BOUND-1@v1",
+        route_version: first.version, node_id: "build", attempt: 0,
+      },
+    });
+    fx.store.lifecyclePut({
+      ...fx.common, lifecycle_id: "LCV-LEGACY-BOUND-2", expected_version: 0, status: "Current",
+      payload: { route: [{ node_id: "build", skill: "dev-impl", dependencies: [] }], summary: "new" },
+      supersedes_lifecycle_id: first.object_id, supersedes_expected_version: first.version,
+    });
+    assert.throws(() => fx.store.workClaim({
+      ...fx.common, work_item_id: "WIT-LEGACY-BOUND", agent_id: "impl-agent", expected_version: 1,
+    }), (error) => error instanceof DevStateError && error.code === "STALE_ROUTE");
   } finally { fx.close(); }
 });

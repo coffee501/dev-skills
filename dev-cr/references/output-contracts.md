@@ -4,7 +4,7 @@
 
 ## 通用信封
 
-正式 `REV` 使用当前 `DEV-SUITE-8.0`；7.0和7.1存量产物继续兼容。包含 `protocol_version/id/type/change/version/status/owner/sources/applies_to/risks/evidence/updated_at`，按需提供 `supersedes`。
+正式 `REV` 可沿用 `DEV-SUITE-8.0`；校验器也接受 8.1，专业产物规则相同；7.0 和 7.1 存量产物继续兼容。包含 `protocol_version/id/type/change/version/status/owner/sources/applies_to/risks/evidence/updated_at`，按需提供 `supersedes`。
 
 ## REV 字段
 

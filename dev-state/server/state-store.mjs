@@ -76,6 +76,140 @@ function objectOrEmpty(value, label) {
   return value;
 }
 
+function validateChangePayload(payload) {
+  if (payload.protocol_version !== "DEV-SUITE-8.1") return;
+  for (const field of ["route", "gates", "lifecycle_route_ref"]) {
+    if (Object.hasOwn(payload, field)) {
+      throw new DevStateError("INVALID_ARGUMENT", "8.1 CHG must not copy LCV-owned " + field);
+    }
+  }
+}
+
+function validateLifecycleRoute(payload) {
+  if (payload.protocol_version === undefined && Array.isArray(payload.route)
+      && payload.route.some((node) => node && typeof node === "object"
+        && (Object.hasOwn(node, "stage") || Object.hasOwn(node, "route_kind")))) {
+    throw new DevStateError("INVALID_ROUTE", "formal LCV route requires protocol_version");
+  }
+  if (!["DEV-SUITE-8.0", "DEV-SUITE-8.1"].includes(payload.protocol_version)
+      || !Object.hasOwn(payload, "route")) return;
+  const route = payload.route;
+  const fail = (message) => { throw new DevStateError("INVALID_ROUTE", message); };
+  if (!Array.isArray(route)) fail("8.x LCV route must be an array");
+  const nodes = new Map();
+  const required = [
+    "node_id", "stage", "skill", "applicability", "dependencies",
+    "entry_conditions", "expected_outputs", "stop_conditions",
+  ];
+  const dvalRef = /^DVAL-[A-Za-z0-9._:-]+@v[1-9][0-9]*$/;
+  for (const node of route) {
+    if (!node || typeof node !== "object" || Array.isArray(node)) fail("route node must be an object");
+    for (const field of required) {
+      if (!Object.hasOwn(node, field)) fail("route node missing " + field);
+    }
+    if (typeof node.node_id !== "string" || !ID_PATTERN.test(node.node_id) || nodes.has(node.node_id)) {
+      fail("route node_id must be unique and valid");
+    }
+    if (typeof node.skill !== "string" || !node.skill) fail("route skill must be a non-empty string");
+    if (!["Applicable", "NotApplicable"].includes(node.applicability)) fail("route applicability is invalid");
+    for (const field of ["agent", "parallel_groups", "attempt", "runtime_status", "work_item_id"]) {
+      if (Object.hasOwn(node, field)) fail("route must not contain runtime field " + field);
+    }
+    for (const field of ["dependencies", "entry_conditions", "expected_outputs", "stop_conditions"]) {
+      if (!Array.isArray(node[field])) fail("route " + field + " must be an array");
+    }
+    if (node.dependencies.some((ref) => typeof ref !== "string" || !ID_PATTERN.test(ref))) {
+      fail("route dependencies must be valid node IDs");
+    }
+    const reason = node.applicability_reason;
+    const hasReason = typeof reason === "string" ? reason.trim().length > 0
+      : Array.isArray(reason) ? reason.length > 0
+      : reason && typeof reason === "object" ? Object.keys(reason).length > 0 : false;
+    if (node.applicability === "NotApplicable" && !hasReason) {
+      fail("NotApplicable route requires applicability_reason");
+    }
+    if (node.skill === "dev-cr" && node.applicability === "NotApplicable") {
+      const decision = node.applicability_decision;
+      if (!decision || typeof decision.owner !== "string" || !decision.owner.trim()
+          || ["basis", "residual_risks", "invalidates_when"].some((field) =>
+            !Array.isArray(decision[field]) || decision[field].length === 0
+            || decision[field].some((item) => typeof item !== "string" || !item.trim()))) {
+        fail("NotApplicable dev-cr requires a complete applicability_decision");
+      }
+    }
+    if (node.route_kind !== undefined) {
+      if (payload.protocol_version !== "DEV-SUITE-8.1") fail("route_kind requires 8.1");
+      if (!["design-probe", "design-validation"].includes(node.route_kind)) fail("unsupported route_kind");
+      const isProbe = node.route_kind === "design-probe";
+      const expected = isProbe ? ["probe-evidence"] : ["RUN", "EVD"];
+      if (node.stage !== "G3" || node.skill !== (isProbe ? "dev-impl" : "dev-val")) {
+        fail("design route node must use the G3 specialist");
+      }
+      if (node.expected_outputs.length !== expected.length
+          || node.expected_outputs.some((item) => !expected.includes(item))
+          || new Set(node.expected_outputs).size !== expected.length) {
+        fail("design route node has invalid expected_outputs");
+      }
+      if (!Array.isArray(node.design_refs)
+          || !node.design_refs.some((ref) => typeof ref === "string" && dvalRef.test(ref))) {
+        fail("design route node requires a versioned DVAL");
+      }
+    }
+    nodes.set(node.node_id, node);
+  }
+  for (const node of route) {
+    if (node.dependencies.some((ref) => !nodes.has(ref))) fail("route has an unknown dependency");
+  }
+  const visiting = new Set();
+  const visited = new Set();
+  const visit = (id) => {
+    if (visiting.has(id)) fail("route dependencies must be acyclic");
+    if (visited.has(id)) return;
+    visiting.add(id);
+    for (const dependency of nodes.get(id).dependencies) visit(dependency);
+    visiting.delete(id);
+    visited.add(id);
+  };
+  for (const id of nodes.keys()) visit(id);
+  const ancestors = (id) => {
+    const result = new Set();
+    const pending = [...nodes.get(id).dependencies];
+    while (pending.length) {
+      const dependency = pending.pop();
+      if (result.has(dependency)) continue;
+      result.add(dependency);
+      pending.push(...nodes.get(dependency).dependencies);
+    }
+    return result;
+  };
+  const reviews = route.filter((node) => node.skill === "dev-cr");
+  for (const node of reviews) {
+    if (node.stage !== "G4") fail("dev-cr must use G4");
+  }
+  for (const node of route) {
+    if (node.applicability !== "Applicable") continue;
+    if (node.route_kind === "design-probe") {
+      const matches = route.some((candidate) =>
+        candidate.route_kind === "design-validation" && candidate.applicability === "Applicable"
+        && ancestors(candidate.node_id).has(node.node_id)
+        && node.design_refs.some((ref) => candidate.design_refs.includes(ref)));
+      if (!matches) fail("design-probe must lead to matching G3 design-validation");
+    }
+    if (node.skill === "dev-impl" && node.route_kind !== "design-probe") {
+      if (node.stage !== "G4") fail("product dev-impl must use G4");
+      if (!reviews.some((review) => ancestors(review.node_id).has(node.node_id))) {
+        fail("product dev-impl must lead to dev-cr");
+      }
+    }
+    if (node.skill === "dev-val" && node.stage === "G5") {
+      const dependencies = ancestors(node.node_id);
+      if (reviews.some((review) => review.applicability === "Applicable" && !dependencies.has(review.node_id))) {
+        fail("G5 dev-val must depend on all applicable dev-cr");
+      }
+    }
+  }
+}
+
 function canonicalJson(value) {
   if (Array.isArray(value)) return `[${value.map(canonicalJson).join(",")}]`;
   if (value && typeof value === "object") {
@@ -199,6 +333,8 @@ export class StateStore {
         snapshot_json TEXT NOT NULL,
         created_at TEXT NOT NULL
       );
+      CREATE INDEX IF NOT EXISTS idx_audit_artifact_version
+        ON audit_events(workspace_id, change_id, object_type, object_id, to_version);
       PRAGMA user_version = ${SCHEMA_VERSION};
     `);
   }
@@ -389,9 +525,11 @@ export class StateStore {
     const existing = this.getObject({ ...input, object_type: "CHG", object_id: input.change_id });
     if (existing) return { created: false, change: existing };
     const status = requireStatus(input.status || "Draft", CHANGE_STATUSES);
+    const payload = objectOrEmpty(input.payload, "payload");
+    validateChangePayload(payload);
     const change = this.putObject({
       ...input, object_type: "CHG", object_id: input.change_id, expected_version: 0,
-      status, payload: objectOrEmpty(input.payload, "payload"),
+      status, payload,
     });
     return { created: true, change };
   }
@@ -406,9 +544,10 @@ export class StateStore {
     if (!CHANGE_TRANSITIONS.get(current.status)?.has(status)) {
       throw new DevStateError("INVALID_TRANSITION", `cannot move change from ${current.status} to ${status}`);
     }
+    const payload = objectOrEmpty(input.payload, "payload");
+    validateChangePayload(payload);
     return this.putObject({
-      ...input, object_type: "CHG", object_id: input.change_id, status,
-      payload: objectOrEmpty(input.payload, "payload"),
+      ...input, object_type: "CHG", object_id: input.change_id, status, payload,
     });
   }
 
@@ -445,6 +584,7 @@ export class StateStore {
         throw new DevStateError("CONFLICT", "multiple Current lifecycle views exist");
       }
       const payload = objectOrEmpty(input.payload, "payload");
+      validateLifecycleRoute(payload);
       if (current.length === 0) {
         if (input.supersedes_lifecycle_id !== undefined || input.supersedes_expected_version !== undefined) {
           throw new DevStateError("INVALID_ARGUMENT", "supersedes fields require a current lifecycle view");
@@ -484,6 +624,23 @@ export class StateStore {
     const rows = this.listObjects({ ...input, object_type: "ARTIFACT" });
     const artifactType = input.artifact_type?.toUpperCase();
     return artifactType ? rows.filter((item) => item.payload.artifact_type === artifactType) : rows;
+  }
+
+  artifactGet(input) {
+    const workspaceId = requireString(input.workspace_id, "workspace_id");
+    const changeId = requireId(input.change_id, "change_id");
+    const artifactId = requireId(input.artifact_id, "artifact_id");
+    if (input.version === undefined) {
+      return this.getObject({ workspace_id: workspaceId, change_id: changeId, object_type: "ARTIFACT", object_id: artifactId });
+    }
+    const version = requireVersion(input.version, "version");
+    if (version === 0) throw new DevStateError("INVALID_ARGUMENT", "version must be positive");
+    const row = this.db.prepare(`
+      SELECT snapshot_json FROM audit_events
+      WHERE workspace_id = ? AND change_id = ? AND object_type = 'ARTIFACT' AND object_id = ? AND to_version = ?
+      ORDER BY sequence DESC LIMIT 1
+    `).get(workspaceId, changeId, artifactId, version);
+    return row ? JSON.parse(row.snapshot_json) : null;
   }
 
   workPrepare(input) {
@@ -628,7 +785,10 @@ export class StateStore {
       throw new DevStateError("STALE_ROUTE", "lifecycle route binding was provided but no Current lifecycle view exists");
     }
     this.#assertRouteMatchesCurrent(input, current, { lifecycle_route_ref: lifecycleRouteRef, route_version: routeVersion, node_id: nodeId });
-    return { lifecycle_route_ref: lifecycleRouteRef, route_version: routeVersion, node_id: nodeId };
+    return {
+      lifecycle_route_ref: lifecycleRouteRef, route_version: routeVersion, node_id: nodeId,
+      route_fingerprint: this.#routeFingerprint(current, nodeId),
+    };
   }
 
   #assertCurrentRouteBinding(input, workItem) {
@@ -644,7 +804,46 @@ export class StateStore {
     if (!current) {
       throw new DevStateError("STALE_ROUTE", "work item route binding exists but no Current lifecycle view exists");
     }
-    this.#assertRouteMatchesCurrent({ ...input, skill: workItem.payload.skill }, current, binding);
+    if (workItem.payload.route_fingerprint === undefined) {
+      // Existing work items retain their strict version binding until replanned.
+      this.#assertRouteMatchesCurrent({ ...input, skill: workItem.payload.skill }, current, binding);
+      return;
+    }
+    const fingerprint = requireString(workItem.payload.route_fingerprint, "route_fingerprint");
+    if (fingerprint !== this.#routeFingerprint(current, binding.node_id, workItem.payload.skill)) {
+      throw new DevStateError("STALE_ROUTE", "work item route node or its dependencies changed; replan it under the Current lifecycle view");
+    }
+  }
+
+  #routeFingerprint(current, nodeId, skill) {
+    const route = Array.isArray(current.payload.route) ? current.payload.route : [];
+    const nodes = new Map();
+    for (const node of route) {
+      if (!node || typeof node.node_id !== "string") continue;
+      if (nodes.has(node.node_id)) throw new DevStateError("STALE_ROUTE", "duplicate route node " + node.node_id);
+      nodes.set(node.node_id, node);
+    }
+    const visited = new Set();
+    const visiting = new Set();
+    const closure = [];
+    const visit = (id) => {
+      if (visiting.has(id)) throw new DevStateError("STALE_ROUTE", "cyclic route dependency " + id);
+      if (visited.has(id)) return;
+      const node = nodes.get(id);
+      if (!node) throw new DevStateError("STALE_ROUTE", "route dependency " + id + " is missing");
+      visiting.add(id);
+      const dependencies = Array.isArray(node.dependencies) ? node.dependencies : [];
+      for (const dependency of dependencies) visit(dependency);
+      visiting.delete(id);
+      visited.add(id);
+      closure.push({ ...node, dependencies: [...dependencies].sort() });
+    };
+    visit(requireId(nodeId, "node_id"));
+    const node = nodes.get(nodeId);
+    if (skill !== undefined && node.skill !== undefined && node.skill !== skill) {
+      throw new DevStateError("STALE_ROUTE", "route node " + nodeId + " changed skill");
+    }
+    return digest(canonicalJson(closure.sort((a, b) => a.node_id.localeCompare(b.node_id))));
   }
 
   #assertRouteMatchesCurrent(input, current, binding) {

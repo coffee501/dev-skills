@@ -2,7 +2,7 @@
 
 面向跨业务领域后端服务与系统集成开发阶段的套件。`dev-orch` 智能体理解目标、选择并主动调用专业 Skill，管理阶段路线、进度和交接；专业 Skill 也可独立使用。套件止于验证门，不执行发布、生产迁移、流量操作或生产运维。
 
-当前插件版本由根目录 `VERSION` 定义，当前值为 `9.0.0`；正式产物协议为 `DEV-SUITE-8.0`。
+当前插件版本由根目录 `VERSION` 定义，当前值为 `9.2.0`；正式产物协议最高版本为 `DEV-SUITE-8.1`。
 
 ## 平台兼容
 
@@ -20,11 +20,12 @@
 [工具兼容规则](dev-orch/references/tool-compatibility.md)。
 
 `dev-orch` 统一负责目标理解、专业 Skill 选择与主动调用、生命周期治理和按需调度：建立阶段路线，评估门禁、失效和交接，并在跨阶段任务中协调执行。
+Claude Code 的 `dev-orch` Agent 只管理控制状态；专业代码或文档工作由独立 `dev-specialist` Agent 执行并登记其产物。Codex 主会话按实际工具权限直接执行或分派专业任务。
 路线与执行投影遵循[路线契约](dev-orch/references/orchestration-interface.md)和[调度协议](dev-orch/references/orchestration-protocol.md)；专业产物与结论仍由对应 Skill 负责。
 Codex 显式执行 `$dev-orch`；Claude Code 执行 `/dev-skills:dev-orch <任务>`，或用 `--agent dev-orch` 启动调度主会话。两端共享[智能体核心](dev-orch/AGENT.md)。子代理达到限制时等待容量，或在有权限的上下文顺序完成工作。
 
 调度中间状态不会写入项目。插件内置的 `dev_state` MCP 使用 `${CLAUDE_PLUGIN_DATA}` 或 `DEV_SKILLS_STATE_HOME` 保存
-SQLite 状态库；项目中只允许出现用户明确确认的最终文档、代码、配置或迁移产物。状态服务需要 Node.js 22.5 或更高版本。
+SQLite 状态库；项目中只写入用户已要求或已授权的最终文档、代码、配置或迁移产物。状态服务需要 Node.js 22.5 或更高版本。
 
 ## 模块
 
@@ -41,7 +42,7 @@ SQLite 状态库；项目中只允许出现用户明确确认的最终文档、�
 | `dev-val` | 测试执行、证据、缺陷和验证结论 | `RUN/EVD/DEFECT/GATE`；可读执行摘要或验证报告 |
 | `dev-orch` | 生命周期路线、门禁、追踪、失效、交接与按需调度 | 内部 `CHG/HOF/LCV/WIT/SWI`；用户可读进度 |
 
-`dev-cr`、`dev-impl`、`dev-val` 的编号记录用于套件内部追踪与交接；面向用户的内容分别按各自的 `references/outline.md` 组织。
+各专业 Skill 的编号记录用于套件内部追踪与交接；面向用户的文档按对应的 `references/outline.md` 组织，正文不直接展示内部交互 JSON。
 
 ## 推荐主线
 
@@ -69,13 +70,13 @@ CTX（按需）
 
 `dev-cr` 保持可被“审查实现、审查PR、验收实现”等明确请求隐式发现；普通实现请求不会因此自动扩展为完整评审。
 进入调度模式后，适用 `dev-impl` 产生可评审候选并满足路线条件时，`dev-orch` 自动分派独立 `dev-cr` 上下文；
-路线遗漏评审、评审上下文与实现上下文不独立或 `REV` 未覆盖候选时，不得进入正式G5。
+路线遗漏评审、`REV` 未覆盖候选，或既无独立评审又无符合项目政策的补偿控制时，不得进入正式G5。
 
 `dev-ctx/dev-impl/dev-val` 默认要求显式调用，其中后两项属于执行型 Skill。真实数据、外部副作用和风险接受仍需精确目标及项目授权；发布和生产运维不属于本套件能力。
 
 ## 协议与验证
 
-当前协议为 `DEV-SUITE-8.0`，并兼容7.0和7.1开发阶段存量产物。共享规则位于 [产物协议](dev-orch/references/artifact-contract.md)、[状态模型](dev-orch/references/lifecycle-state-model.md)、[交接协议](dev-orch/references/handoff-contract.md)和[失效传播](dev-orch/references/invalidation-rules.md)。
+控制面新增产物使用 `DEV-SUITE-8.1`，并兼容 8.0、7.1 和 7.0 开发阶段存量产物；未变更的专业产物可继续使用 8.0。共享规则位于 [产物协议](dev-orch/references/artifact-contract.md)、[状态模型](dev-orch/references/lifecycle-state-model.md)、[交接协议](dev-orch/references/handoff-contract.md)和[失效传播](dev-orch/references/invalidation-rules.md)。
 
 在仓库根目录运行：
 
@@ -105,4 +106,4 @@ powershell -NoProfile -File dev-req/scripts/validate.ps1
 所有正式JSON产物都可先使用 `dev-orch/scripts/validate_artifact_envelope.py` 检查共享信封；存在模块专用校验器时再执行
 模块增量规则。GitHub Actions在Windows和Linux上运行同一完整门禁，避免平台或漏跑造成假绿。
 
-这些测试执行结构契约、验证器和外部状态机行为；场景JSON只是前向评估用例目录，不等同于真实Agent行为已经通过。模块自带的校验器和确定性测试仍不替代独立语义评审、真实测试证据、授权或阶段门确认；支持独立Agent运行的环境还应按场景目录执行前向评估，并把使用的套件版本、输入场景、独立执行上下文和结果摘要作为发布证据。
+这些测试执行结构契约、验证器和外部状态机行为；场景JSON只是前向评估用例目录，不等同于真实Agent行为已经通过。模块自带的校验器和确定性测试仍不替代独立语义评审、真实测试证据、授权或阶段门确认；支持独立Agent运行的环境还应按场景目录执行前向评估，并把使用的套件版本、输入场景、独立执行上下文和结果摘要作为套件验收证据。

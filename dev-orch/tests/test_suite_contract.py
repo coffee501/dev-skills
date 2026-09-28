@@ -109,6 +109,10 @@ class SuiteContractTests(unittest.TestCase):
         lifecycle_view["route"][0]["agent"] = "worker-1"
         errors = self.lifecycle_validator.validate_artifact(lifecycle_view)
         self.assertTrue(any("orchestration-only fields: agent" in error for error in errors))
+        del lifecycle_view["route"][0]["agent"]
+        lifecycle_view["route"][0]["route_kind"] = "design-probe"
+        errors = self.lifecycle_validator.validate_artifact(lifecycle_view)
+        self.assertTrue(any("route_kind requires 8.1" in error for error in errors))
 
     def test_8_0_lifecycle_route_rejects_unknown_and_cyclic_dependencies(self) -> None:
         def node(node_id: str, dependencies: list[str]) -> dict:
@@ -213,6 +217,92 @@ class SuiteContractTests(unittest.TestCase):
             "invalidates_when": ["assertion or production-code scope changes"],
         }
         self.assertEqual(self.lifecycle_validator.validate_artifact(lifecycle_view), [])
+
+    def test_g3_design_probe_requires_matching_validation_without_g4_review(self) -> None:
+        def node(node_id: str, skill: str, kind: str, dependencies: list[str],
+                 outputs: list[str], refs: list[str]) -> dict:
+            return {
+                "node_id": node_id, "stage": "G3", "skill": skill,
+                "route_kind": kind, "applicability": "Applicable",
+                "dependencies": dependencies, "design_refs": refs,
+                "entry_conditions": [], "expected_outputs": outputs, "stop_conditions": [],
+            }
+
+        probe = node("probe", "dev-impl", "design-probe", [], ["probe-evidence"], ["DVAL-001@v1"])
+        validation = node(
+            "check-probe", "dev-val", "design-validation", ["probe"],
+            ["RUN", "EVD"], ["DVAL-001@v1"],
+        )
+        view = {
+            "protocol_version": "DEV-SUITE-8.1", "id": "LCV-PROBE", "type": "lifecycle-view",
+            "change": "CHG-001", "version": 1, "status": "Current", "owner": "dev-orch",
+            "sources": [], "applies_to": {}, "risks": [], "evidence": [],
+            "updated_at": "2026-09-26T12:00:00+08:00", "chg_ref": "CHG-001@v1",
+            "stages": [], "gates": {}, "artifact_refs": [], "open_handoffs": [],
+            "invalidation": [], "blockers": [], "next_responsibility": "dev-impl",
+            "confirmation_scope": "Suggested", "route": [probe, validation],
+        }
+        self.assertEqual(self.lifecycle_validator.validate_artifact(view), [])
+        validation["expected_outputs"] = ["EVD", "RUN"]
+        self.assertEqual(self.lifecycle_validator.validate_artifact(view), [])
+        validation["expected_outputs"] = ["RUN", "EVD"]
+        view["protocol_version"] = "DEV-SUITE-8.0"
+        self.assertTrue(any(
+            "must use stage G4" in error
+            for error in self.lifecycle_validator.validate_artifact(view)
+        ))
+        view["protocol_version"] = "DEV-SUITE-8.1"
+
+        view["route"] = [probe]
+        errors = self.lifecycle_validator.validate_artifact(view)
+        self.assertTrue(any("must lead to a G3 dev-val design-validation" in error for error in errors))
+
+        view["route"] = [probe, validation]
+        probe["expected_outputs"] = ["IMP"]
+        errors = self.lifecycle_validator.validate_artifact(view)
+        self.assertTrue(any("must only output probe-evidence" in error for error in errors))
+        probe["expected_outputs"] = ["probe-evidence"]
+
+        validation["design_refs"] = ["DVAL-002@v1"]
+        errors = self.lifecycle_validator.validate_artifact(view)
+        self.assertTrue(any("same DVAL" in error for error in errors))
+        validation["design_refs"] = ["DVAL-001@v1"]
+
+        probe["design_refs"] = ["DVAL-001"]
+        errors = self.lifecycle_validator.validate_artifact(view)
+        self.assertTrue(any("versioned DVAL" in error for error in errors))
+        probe["design_refs"] = [{"invalid": "ref"}]
+        self.assertTrue(self.lifecycle_validator.validate_artifact(view))
+        probe["design_refs"] = ["DVAL-001@v1"]
+        del probe["route_kind"]
+        errors = self.lifecycle_validator.validate_artifact(view)
+        self.assertTrue(any("must use stage G4" in error for error in errors))
+        self.assertTrue(any("must lead to a dev-cr review node" in error for error in errors))
+
+    def test_8_1_change_has_no_route_or_gate_copy(self) -> None:
+        change = {
+            "protocol_version": "DEV-SUITE-8.1", "id": "CHG-SUMMARY", "type": "lifecycle-change",
+            "change": "CHG-SUMMARY", "version": 1, "status": "Draft", "owner": "dev-orch",
+            "sources": [], "applies_to": {}, "risks": [], "evidence": [],
+            "updated_at": "2026-09-26T12:00:00+08:00", "objective": "change",
+            "scope": {}, "non_scope": [], "change_types": ["fix"],
+            "handoff_refs": [], "open_handoffs": [], "artifact_refs": [], "completion": {},
+        }
+        self.assertEqual(self.lifecycle_validator.validate_artifact(change), [])
+        for field, value in (
+            ("route", ["G3"]), ("gates", {"G3": "Suggested"}),
+            ("lifecycle_route_ref", "LCV-SUMMARY@v2"),
+        ):
+            with self.subTest(field=field):
+                change[field] = value
+                self.assertTrue(any(
+                    "LCV-owned" in error for error in self.lifecycle_validator.validate_artifact(change)
+                ))
+                del change[field]
+        change["protocol_version"] = "DEV-SUITE-8.0"
+        change["route"] = ["G3"]
+        change["gates"] = {"G3": "Suggested"}
+        self.assertEqual(self.lifecycle_validator.validate_artifact(change), [])
 
     def test_orchestrator_preserves_execution_boundaries(self) -> None:
         document = json.loads((ORCH_ROOT / "tests" / "orchestration-cases.json").read_text(encoding="utf-8"))

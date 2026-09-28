@@ -15,7 +15,7 @@ COMMON_FIELDS = {
     "protocol_version", "id", "type", "change", "version",
     "status", "owner", "sources", "applies_to", "risks", "evidence", "updated_at",
 }
-SUPPORTED_PROTOCOLS = {"DEV-SUITE-7.0", "DEV-SUITE-7.1", "DEV-SUITE-8.0"}
+SUPPORTED_PROTOCOLS = {"DEV-SUITE-7.0", "DEV-SUITE-7.1", "DEV-SUITE-8.0", "DEV-SUITE-8.1"}
 
 TYPE_RULES = {
     "validation-run": {
@@ -88,7 +88,7 @@ def validate_artifact(document: Any) -> list[str]:
         return [f"unsupported artifact type: {artifact_type!r}"]
 
     missing = sorted((COMMON_FIELDS | rule["required"]) - document.keys())
-    if artifact_type == "validation-gate" and document.get("protocol_version") == "DEV-SUITE-8.0":
+    if artifact_type == "validation-gate" and document.get("protocol_version") in {"DEV-SUITE-8.0", "DEV-SUITE-8.1"}:
         missing.extend(sorted(GATE_8_0_REQUIRED - document.keys()))
     if missing:
         errors.append("missing required fields: " + ", ".join(sorted(set(missing))))
@@ -98,7 +98,7 @@ def validate_artifact(document: Any) -> list[str]:
         errors.append(f"id must start with {rule['prefix']} and contain a suffix")
 
     if document.get("protocol_version") not in SUPPORTED_PROTOCOLS:
-        errors.append("protocol_version must be one of: DEV-SUITE-7.0, DEV-SUITE-7.1, DEV-SUITE-8.0")
+        errors.append("protocol_version must be one of: DEV-SUITE-7.0, DEV-SUITE-7.1, DEV-SUITE-8.0, DEV-SUITE-8.1")
 
     if document.get("status") not in rule["statuses"]:
         allowed = ", ".join(sorted(rule["statuses"]))
@@ -127,7 +127,7 @@ def validate_artifact(document: Any) -> list[str]:
         confirmation = document.get("confirmation")
         if confirmation not in {"Suggested", "Confirmed"}:
             errors.append("confirmation must be Suggested or Confirmed")
-        if document.get("protocol_version") == "DEV-SUITE-8.0":
+        if document.get("protocol_version") in {"DEV-SUITE-8.0", "DEV-SUITE-8.1"}:
             confirmation_record = document.get("confirmation_record")
             if confirmation == "Suggested":
                 if confirmation_record is not None:

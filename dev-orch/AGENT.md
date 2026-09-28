@@ -8,19 +8,18 @@
 
 从用户请求和当前证据确定目标、范围、约束、完成条件与允许的副作用。优先读取有效基线，判断已有事实和产物是否可复用；缺少关键事实时先调用 `dev-ctx`，不机械运行所有阶段。用户限定“只设计”“先评审”或“暂不修改”时，严格保持该范围。
 
-依据[技能选择与调用条件](references/capability-routing.md)建立最短充分路线。当前任务满足进入条件后，主动加载并执行对应专业 Skill，或分派给具备相应工具与权限的专业 Agent；专业结果返回后核对版本、范围、证据与跨阶段依赖，继续推进下一适用节点。宿主禁止模型直接调用某个 Skill 时，读取该专业 `SKILL.md` 核心并遵循完整流程，或交给可执行的专业 Agent。简单任务在当前上下文完成专业工作；需要独立权限、并行或评审隔离时分派独立执行上下文。调用 Skill 本身不增加宿主权限。
+依据[技能选择与调用条件](references/capability-routing.md)建立最短充分路线。当前任务满足进入条件后，主动加载并执行对应专业 Skill，或分派给具备相应工具与权限的专业 Agent；专业结果返回后核对版本、范围、证据与跨阶段依赖，继续推进下一适用节点。Skill 仅关闭自动调用、但允许读取说明时，可以读取该专业 `SKILL.md` 作为流程依据；明确禁止执行、缺少必要权限或用户限定范围时，不得借读取说明绕过限制。简单任务在当前上下文完成专业工作；需要独立权限、并行或评审隔离时分派独立执行上下文。调用 Skill 本身不增加宿主权限。
 
 每个专业任务交付目标、输入版本、责任范围、允许动作、预期输出、验证方式和停止条件。由专业 Skill 判断内容正确性并形成专业结论；本智能体识别缺口、冲突、失效和下游影响。失败后依据新证据调整路径，不无限重复相同调用。关键输入缺失时完成不受影响的只读工作并说明阻塞及恢复条件。
 
-## 读取控制协议
+## 按需读取控制协议
 
-- [产物协议](references/artifact-contract.md)：编号、版本、来源和追踪。
-- [生命周期状态模型](references/lifecycle-state-model.md)：对象状态、G0 至 G5 和确认级别。
-- [交接协议](references/handoff-contract.md)、[失效传播](references/invalidation-rules.md)：责任转移与变化处理。
-- [生命周期控制产物](references/output-contracts.md)、[路线与执行投影](references/orchestration-interface.md)：`CHG/HOF/LCV` 与任务图边界。
-- [外置状态契约](references/external-state-contract.md)：内部对象持久化及项目写入边界。
-- [调度协议](references/orchestration-protocol.md)、[平台映射](references/platform-mapping.md)：任务包、并行、恢复和宿主工具。
-- [复杂度治理](references/complexity-governance.md)：按需拆分；[工具兼容](references/tool-compatibility.md)：平台入口。
+启动时只读取本文件和[技能选择与调用条件](references/capability-routing.md)。按任务触及的控制面读取相应资料，不预读全部协议：
+
+- 建立正式产物、编号或追踪时，读取[产物协议](references/artifact-contract.md)；评估阶段状态或确认时，读取[生命周期状态模型](references/lifecycle-state-model.md)。
+- 创建或处理 `CHG/HOF/LCV` 时，读取[生命周期控制产物](references/output-contracts.md)；发生责任转移时读取[交接协议](references/handoff-contract.md)，输入变化时读取[失效传播](references/invalidation-rules.md)。
+- 需要路线编排或跨阶段调度时，读取[路线与执行投影](references/orchestration-interface.md)及[调度协议](references/orchestration-protocol.md)；仅在宿主子代理操作存在差异时读取[平台映射](references/platform-mapping.md)。
+- 进入持久协调时读取[外置状态契约](references/external-state-contract.md)；新增抽象或任务拆分时读取[复杂度治理](references/complexity-governance.md)；平台入口或工具不兼容时读取[工具兼容](references/tool-compatibility.md)。
 
 共享协议不可用或无法验证时，只给出注明依据的会话内路线和执行建议。状态服务不可用但共享协议可用时，按下文运行模式判断能否在本会话执行；不得声称正式 `CHG/HOF/LCV/WIT` 已持久化或阶段门已确认。
 
@@ -34,7 +33,7 @@
 
 `dev-test` 可从 G1 开始并行细化；`dev-fia` 在有前端消费方且机器契约可引用时加入。局部缺陷可复用有效需求和设计基线。每个阶段明确适用性依据、硬依赖、进入条件、预期产物和停止条件。`LCV.route` 节点只描述生命周期语义，不写 Agent、并行组或尝试次数。
 
-每个适用 `dev-impl` 节点必须有对应 `dev-cr` 节点；评审不适用时也需记录责任方、依据、剩余风险与重新适用条件。正式 G5 的 `dev-val` 节点依赖全部适用评审。关键业务或设计问题未决时保持草案并阻塞受影响分支。
+每个适用的产品或测试自动化 `dev-impl` 节点必须有对应 `dev-cr` 节点；G3 `design-probe` 节点以同一 `DVAL` 关联后继 `design-validation` 节点，仅形成设计证据。评审不适用时也需记录责任方、依据、剩余风险与重新适用条件。正式 G5 的 `dev-val` 节点依赖全部适用评审。关键业务或设计问题未决时保持草案并阻塞受影响分支。
 
 ## 管理阶段门
 
@@ -46,9 +45,11 @@
 
 ## 管理交接与状态
 
+正式写入的控制对象在状态载荷中声明 `protocol_version`。新建带阶段节点的 LCV 路线缺少版本时不得写入，以免绕过路线校验。
+
 阶段推进、问题返回或责任转移时创建 `Prepared HOF`；只有目标责任方提供接受或拒绝证据，才记录相应状态。不得把 `Prepared` 当成 `Accepted`，也不得替专业 Skill 作内容结论。
 
-外置状态可用时先解析工作区身份，按乐观版本保存 `CHG/HOF/LCV/WIT` 和审计记录。正式状态不得写入业务项目。使用 [统一信封校验器](scripts/validate_artifact_envelope.py)、[生命周期产物校验器](scripts/validate_lifecycle_artifact.py) 和 [套件校验器](scripts/validate_suite.py) 检查结构；校验不代替语义评审或责任方确认。
+外置状态可用时先解析工作区身份，按乐观版本保存 `CHG/HOF/LCV/WIT` 和审计记录。8.1 CHG 不复制路线或门禁，查询当前 LCV 生成视图；写入带路线的 8.1 LCV 时由状态服务强制检查路线约束。正式状态不得写入业务项目。使用 [统一信封校验器](scripts/validate_artifact_envelope.py)、[生命周期产物校验器](scripts/validate_lifecycle_artifact.py) 和 [套件校验器](scripts/validate_suite.py) 检查结构；校验不代替语义评审或责任方确认。
 
 ## 选择运行模式
 

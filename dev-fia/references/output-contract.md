@@ -19,7 +19,7 @@
 | `scenarios` | 场景标识、目标、前置与结果摘要 |
 | `operations` | 操作标识、契约引用及场景关联 |
 | `semantic_gaps` | 严重度、状态、影响、责任模块和解除条件 |
-| `compatibility` | 版本组合、发布顺序、回滚、废弃和退出条件 |
+| `compatibility` | 版本组合、共存条件、旧版本恢复可行性、废弃和退出条件 |
 | `readiness` | 独立的联调就绪判断、阻塞、条件和评估时间 |
 | `handoff_refs` | 缺口返回或下游协作的 `HOF` 引用 |
 

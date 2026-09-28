@@ -44,7 +44,7 @@ devstate://workspace/{workspace_id}/change/{change_id}/{object_type}/{object_id}
   `Acknowledged` 直接调用 `handoff_accept/handoff_reject`，分别保存责任人、时间与证据。后继交接使用
   `handoff_supersede`，不得把接受与拒绝共用一个含糊的决定字段。
 
-状态服务只执行结构、状态和并发边界；`dev-orch` 校验治理结论的正式产物语义与授权证据，专业结论由对应 Skill 负责。
+正式写入的控制对象在 `payload.protocol_version` 中声明协议版本。状态服务在写入 8.1 CHG 时拒绝 LCV 专属字段，在写入带路线的 8.x LCV 时检查节点结构、依赖图及 G3/G4/G5 约束；设计探针只允许 8.1。带阶段字段的路线缺少协议版本时拒绝写入。存量简化载荷仍可按原边界读取。完整信封和专业内容校验由对应校验器与 Skill 负责，责任方确认不由状态服务推断。
 
 ## WIT 工作项
 
@@ -55,8 +55,9 @@ devstate://workspace/{workspace_id}/change/{change_id}/{object_type}/{object_id}
 | `work_item_id` | 稳定 `WIT-*` 编号 |
 | `skill` | 唯一目标专业 Skill |
 | `input_versions` | 版本化输入引用 |
-| `lifecycle_route_ref` / `route_version` / `node_id` | 当前 `LCV.route` 的精确版本和节点；正式调度工作项必须匹配 |
-| `input_fingerprint` | 排序后输入的内容指纹 |
+| `lifecycle_route_ref` / `route_version` / `node_id` | 创建工作项时的 LCV 来源版本和节点，保留供追踪 |
+| `route_fingerprint` | 当前节点及其依赖闭包的内容指纹；关联路线内容变化时阻止认领或成功完成 |
+| `input_fingerprint` | 按输入版本数组顺序生成的内容指纹 |
 | `owned_paths` | 允许修改的项目路径；为空表示不授权写项目 |
 | `owned_artifacts` | 责任产物编号 |
 | `attempt` | 实际认领次数 |
@@ -64,9 +65,13 @@ devstate://workspace/{workspace_id}/change/{change_id}/{object_type}/{object_id}
 | `status` | `Prepared/Running/Completed/Blocked/Failed/Cancelled` |
 | `expected_outputs` | 预期产物和证据 |
 
-`work_prepare` 只创建新 `WIT`；已有编号不得重置为 `Prepared`、清空尝试次数或丢弃结果。正式调度时须绑定当前 `LCV.route` 中存在且 Skill 匹配的节点。`work_claim` 和成功完成 `work_complete` 前重新核对路线版本，旧路线结果不得进入 `Completed`；失效任务按阻塞或取消路径保留证据。重试 `Blocked` 工作项沿用有效的输入和路线绑定；终态工作需要新编号与追踪关系。
+`work_prepare` 只创建新 `WIT`；已有编号不得重置为 `Prepared`、清空尝试次数或丢弃结果。正式调度时须绑定当前 `LCV.route` 中存在且 Skill 匹配的节点。`work_claim` 和成功完成 `work_complete` 前核对当前节点及其依赖闭包的指纹；仅修改 LCV 摘要或无关节点不使工作项失效，关联节点、依赖或 Skill 变化时不得进入 `Completed`。旧版无路线指纹的工作项沿用严格版本核对，必要时重新规划；失效任务按阻塞或取消路径保留证据。重试 `Blocked` 工作项沿用有效的输入和路线绑定；终态工作需要新编号与追踪关系。
 
 `work_get/work_list/agent_run_list` 提供中断后的当前任务和运行身份恢复读取。`work_claim` 必须提供当前版本；`agent_run_bind` 只允许绑定处于 `Running` 的 WIT，并且必须匹配认领 Agent 和输入指纹；`work_complete` 同样必须匹配认领 Agent 和输入指纹，并在同一事务中关闭对应的 `Running` Agent Run。冲突时返回最新对象，不覆盖其他 Agent 的更新。
+
+## 专业产物登记与历史读取
+
+对应专业 Skill 保有产物的语义、状态和版本责任。正式持久化流程由具备专业执行权限的上下文先校验产物，再使用 `artifact_put` 登记自己的版本化产物和依据；Claude Code 由独立 `dev-specialist` Agent 执行，`dev-orch` 仅用 `artifact_list/artifact_get` 读取核对且不获得写权。专业上下文无登记工具时明确报告缺口，不宣称产物已经持久化。`artifact_get` 可按编号读取当前版本，或按 `version` 精确读取审计中的历史快照，不受 `audit_list` 最近事件窗口限制。状态服务保存信封和最小必要结构，不代替专业内容评审，也不把内部 JSON 当作用户报告。
 
 ## 并发与审计
 

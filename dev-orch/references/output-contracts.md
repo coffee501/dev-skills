@@ -2,7 +2,7 @@
 
 ## 通用信封
 
-新建 `CHG/HOF/LCV` 使用 `DEV-SUITE-8.0` 统一信封，7.0和7.1开发阶段存量产物继续兼容：`protocol_version`、`id`、`type`、`change`、`version`、
+新建 `CHG/HOF/LCV` 使用 `DEV-SUITE-8.1` 统一信封；7.0、7.1 和 8.0 存量产物继续按各自版本校验：`protocol_version`、`id`、`type`、`change`、`version`、
 `status`、`owner`、`sources`、`applies_to`、`risks`、`evidence`、`updated_at`。`supersedes`按需提供。
 
 ## CHG
@@ -10,8 +10,7 @@
 类型为 `lifecycle-change`，ID使用 `CHG-*`。至少包含：
 
 - `objective`、`scope`、`non_scope`、`change_types`。
-- `route`：适用阶段、硬依赖、进入条件、期望产物、停止条件，以及跳过阶段及依据；不包含Agent、并行组、尝试次数或运行状态。
-- `gates`：G0至G5适用视图，不把所有阶段机械设为必需。
+- 8.1 的 CHG 不保存 `route`、`gates` 或 `lifecycle_route_ref`；需要当前路线与门禁时按变更编号读取 Current LCV，并从该版本生成用户视图。7.x/8.0 存量 CHG 继续按原字段读取，不将旧摘要作为路线权威。
 - `handoff_refs`、`open_handoffs`、`artifact_refs`、`completion`。
 
 状态使用 `Draft → Active → Completed / Cancelled / Superseded`。`change`必须等于自身ID。`Completed`必须具有责任方确认、
@@ -33,12 +32,13 @@
 - `chg_ref`、`stages`、`gates`、`artifact_refs`。
 - `open_handoffs`、`invalidation`、`blockers`。
 - `next_responsibility`、`confirmation_scope`。
-- 供ORCH调度使用的8.0 `LCV` 增加 `route`：每个节点包含稳定且唯一的 `node_id`，以及
+- 供 ORCH 调度使用的 8.x `LCV` 增加 `route`：每个节点包含稳定且唯一的 `node_id`，以及
   `stage/skill/applicability/dependencies/entry_conditions/expected_outputs/stop_conditions`；`dependencies` 只引用同一路线中的
   `node_id`，依赖图必须无环。`NotApplicable` 节点还必须提供 `applicability_reason`。评审节点不适用时还必须提供
   `applicability_decision: {basis, owner, residual_risks, invalidates_when}`；`owner`为非空字符串，其余三项为非空字符串列表。节点不包含Agent、并行组、
   尝试次数、运行状态或工作项编号。无需调度的普通生命周期快照可以省略该字段。
-- 每个适用 `dev-impl` 节点必须沿依赖图到达对应 `dev-cr` 节点；正式G5的适用 `dev-val` 节点必须依赖全部适用
+- 8.1 G3 设计验证使用显式 `route_kind: design-probe` 的 `dev-impl` 节点和后继 `route_kind: design-validation` 的 `dev-val` 节点；两者以版本化 `design_refs` 关联同一 `DVAL`。探针仅输出 `probe-evidence`，设计验证仅输出 `RUN/EVD`；不得以探针替代产品实现或 G4/G5 门禁。
+- 每个适用的产品或测试自动化 `dev-impl` 节点必须沿依赖图到达对应 `dev-cr` 节点；正式G5的适用 `dev-val` 节点必须依赖全部适用
   `dev-cr` 节点。评审不适用只能由带依据的 `NotApplicable` 评审节点表达，不能通过删除评审节点绕过G4。
 
 `LCV.route` 是 `dev-orch` 的权威生命周期路线。调度时只在硬依赖内生成执行投影；路线语义变化须产生后继 `LCV`，不能覆盖当前快照。

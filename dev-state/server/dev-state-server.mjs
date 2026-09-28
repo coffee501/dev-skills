@@ -32,7 +32,7 @@ const tools = [
   { name: "lifecycle_get", description: "读取变更当前的外部 LCV。", inputSchema: schema({
     workspace_id: { type: "string" }, change_id: { type: "string" },
   }, ["workspace_id", "change_id"]) },
-  { name: "lifecycle_put", description: "使用乐观版本控制创建或更新外部 LCV。", inputSchema: schema({
+  { name: "lifecycle_put", description: "按乐观版本控制写入 LCV；8.x 正式路线写入前校验结构和阶段依赖。", inputSchema: schema({
     ...COMMON_WRITE, lifecycle_id: { type: "string", pattern: "^LCV-" }, status: { enum: ["Current", "Superseded"] },
     payload: { type: "object" }, supersedes_lifecycle_id: { type: "string", pattern: "^LCV-" },
     supersedes_expected_version: { type: "integer", minimum: 1 },
@@ -43,6 +43,9 @@ const tools = [
   { name: "artifact_list", description: "列出外部中间产物。", inputSchema: schema({
     workspace_id: { type: "string" }, change_id: { type: "string" }, artifact_type: { type: "string" }, status: { type: "string" }, limit: { type: "integer" },
   }, ["workspace_id", "change_id"]) },
+  { name: "artifact_get", description: "按标识和可选版本读取外部中间产物历史快照。", inputSchema: schema({
+    workspace_id: { type: "string" }, change_id: { type: "string" }, artifact_id: { type: "string" }, version: { type: "integer", minimum: 1 },
+  }, ["workspace_id", "change_id", "artifact_id"]) },
   { name: "work_prepare", description: "创建带输入指纹的版本化 WIT。", inputSchema: schema({
     ...COMMON_WRITE, work_item_id: { type: "string" }, skill: { type: "string" }, input_versions: { type: "array" },
     lifecycle_route_ref: { type: "string" }, route_version: { type: "integer", minimum: 1 }, node_id: { type: "string" },
@@ -120,6 +123,7 @@ const handlers = {
   lifecycle_put: (store, args) => store.lifecyclePut(args),
   artifact_put: (store, args) => store.artifactPut(args),
   artifact_list: (store, args) => store.artifactList(args),
+  artifact_get: (store, args) => store.artifactGet(args),
   work_prepare: (store, args) => store.workPrepare(args),
   work_get: (store, args) => store.workGet(args),
   work_list: (store, args) => store.workList(args),

@@ -48,7 +48,7 @@ test("MCP server initializes and exposes external-state tools", async () => {
     for (const name of [
       "workspace_resolve", "change_get", "change_put", "work_prepare", "handoff_prepare", "handoff_get", "handoff_list", "handoff_acknowledge",
       "work_get", "work_list", "agent_run_bind", "agent_run_list",
-      "handoff_accept", "handoff_reject", "handoff_supersede", "promotion_prepare", "audit_list",
+      "handoff_accept", "handoff_reject", "handoff_supersede", "promotion_prepare", "audit_list", "artifact_get",
     ]) assert.ok(names.has(name));
     const workPrepare = listed.result.tools.find((tool) => tool.name === "work_prepare");
     for (const field of ["lifecycle_route_ref", "route_version", "node_id"]) {
@@ -128,5 +128,29 @@ test("MCP tool failures return structured errors", async () => {
     const response = await server.request(1, "tools/call", { name: "unknown", arguments: {} });
     assert.equal(response.error.code, -32601);
     assert.equal(response.error.data.code, "METHOD_NOT_FOUND");
+  } finally { await server.close(); }
+});
+
+test("MCP artifact_get returns an exact historical snapshot", async () => {
+  const server = startServer();
+  try {
+    const resolved = await server.request(1, "tools/call", {
+      name: "workspace_resolve", arguments: { project_path: resolve("."), display_name: "dev-skills" },
+    });
+    const common = {
+      workspace_id: resolved.result.structuredContent.workspace_id,
+      change_id: "CHG-ARTIFACT-HISTORY", actor: "dev-lld", source: "test",
+    };
+    await server.request(2, "tools/call", { name: "artifact_put", arguments: {
+      ...common, artifact_id: "DET-MCP", artifact_type: "DET", expected_version: 0, status: "Draft", payload: { value: 1 },
+    } });
+    await server.request(3, "tools/call", { name: "artifact_put", arguments: {
+      ...common, artifact_id: "DET-MCP", artifact_type: "DET", expected_version: 1, status: "Accepted", payload: { value: 2 },
+    } });
+    const historical = await server.request(4, "tools/call", { name: "artifact_get", arguments: {
+      workspace_id: common.workspace_id, change_id: common.change_id, artifact_id: "DET-MCP", version: 1,
+    } });
+    assert.equal(historical.result.structuredContent.version, 1);
+    assert.equal(historical.result.structuredContent.payload.value, 1);
   } finally { await server.close(); }
 });

@@ -4,7 +4,7 @@
   "author": {
     "name": "Dev Skills Maintainers"
   },
-  "version": "9.0.0",
+  "version": "9.2.0",
   "mcpServers": {
     "dev_state": {
       "command": "node",
@@ -16,7 +16,8 @@
     }
   },
   "agents": [
-    "./.claude/agents/dev-orch.md"
+    "./.claude/agents/dev-orch.md",
+    "./.claude/agents/dev-specialist.md"
   ],
   "skills": [
     "./.claude/skills/dev-ctx",

@@ -69,6 +69,7 @@ def validate_suite(root: Path = SUITE_ROOT) -> list[str]:
         "dev-orch/references/capability-routing.md",
         "dev-orch/references/outline.md",
         ".codex/agents/dev-orch.toml",
+        ".claude/agents/dev-specialist.md",
         ".agents/skills/dev-orch/SKILL.md",
         ".agents/skills/dev-orch/agents/openai.yaml",
         "dev-ctx/tests/test_skill_contract.py",
@@ -77,6 +78,9 @@ def validate_suite(root: Path = SUITE_ROOT) -> list[str]:
         "dev-lld/tests/test_skill_contract.py",
         "dev-impl/scripts/validate_implementation_artifact.py",
         "dev-impl/tests/test_skill_contract.py",
+        "dev-req/references/outline.md",
+        "dev-ctx/references/outline.md",
+        "dev-fia/references/outline.md",
         "dev-cr/references/outline.md",
         "dev-impl/references/outline.md",
         "dev-val/references/outline.md",
@@ -159,8 +163,10 @@ def validate_suite(root: Path = SUITE_ROOT) -> list[str]:
         actual_skill_entries = set(plugin.get("skills", []))
         if actual_skill_entries != expected_skill_entries:
             errors.append("Claude plugin skill registry does not match the suite")
-        if set(plugin.get("agents", [])) != {"./.claude/agents/dev-orch.md"}:
-            errors.append("Claude plugin must register .claude/agents/dev-orch.md")
+        if set(plugin.get("agents", [])) != {
+            "./.claude/agents/dev-orch.md", "./.claude/agents/dev-specialist.md",
+        }:
+            errors.append("Claude plugin must register dev-orch and dev-specialist agents")
         if plugin.get("version") != suite_version:
             errors.append("Claude plugin version must match VERSION")
         mcp = plugin.get("mcpServers", {}).get("dev_state", {})
@@ -208,7 +214,7 @@ def validate_suite(root: Path = SUITE_ROOT) -> list[str]:
             "name: dev-orch", "model: inherit", "effort: high", "Skill", "Agent",
             "CHG", "HOF", "LCV", "WIT", "Prepared", "Accepted",
             "mcp__dev_state__workspace_resolve", "workspace_resolve",
-            "按核心文件中的相对链接读取", "开始前完整读取",
+            "启动时只读取技能路由", "开始前完整读取",
             "../../dev-orch/AGENT.md", "${CLAUDE_PLUGIN_ROOT}/dev-orch/AGENT.md",
         }
         for token in sorted(required_agent_tokens):
@@ -229,7 +235,7 @@ def validate_suite(root: Path = SUITE_ROOT) -> list[str]:
                 "mcp__dev_state__handoff_acknowledge", "mcp__dev_state__handoff_accept",
                 "mcp__dev_state__handoff_reject", "mcp__dev_state__handoff_supersede",
                 "mcp__dev_state__invalidation_apply", "mcp__dev_state__change_archive",
-                "mcp__dev_state__artifact_list",
+                "mcp__dev_state__artifact_list", "mcp__dev_state__artifact_get",
                 "mcp__dev_state__work_prepare", "mcp__dev_state__work_get",
                 "mcp__dev_state__work_list", "mcp__dev_state__work_claim",
                 "mcp__dev_state__work_complete", "mcp__dev_state__agent_run_bind",
@@ -289,7 +295,7 @@ def validate_suite(root: Path = SUITE_ROOT) -> list[str]:
 
     artifact_contract = (ORCH_ROOT / "references" / "artifact-contract.md").read_text(encoding="utf-8")
     for token in (
-        "DEV-SUITE-8.0", "dev-cr", "REV", "dev-fia", "FIA", "dev-orch", "WIT",
+        "DEV-SUITE-8.0", "DEV-SUITE-8.1", "dev-cr", "REV", "dev-fia", "FIA", "dev-orch", "WIT",
         "TSC/TC Draft", "IMP(kind=test-automation)", "闭环验证结论 `GATE`", "只读投影视图",
         "人类可读实现交付摘要", "不能替代实际差异、`REV` 或 `GATE`",
     ):
@@ -492,12 +498,12 @@ def validate_suite(root: Path = SUITE_ROOT) -> list[str]:
             if getattr(module, "PROTOCOL", None) != "DEV-SUITE-8.0":
                 errors.append("dev_fia: new FIA artifacts must use DEV-SUITE-8.0")
             supported = set(getattr(module, "SUPPORTED_PROTOCOLS", set()))
-            if not {"DEV-SUITE-7.1", "DEV-SUITE-8.0"}.issubset(supported):
-                errors.append("dev_fia: validator must preserve DEV-SUITE-7.1 and accept DEV-SUITE-8.0")
+            if not {"DEV-SUITE-7.1", "DEV-SUITE-8.0", "DEV-SUITE-8.1"}.issubset(supported):
+                errors.append("dev_fia: validator must preserve DEV-SUITE-7.1 and accept DEV-SUITE-8.0/8.1")
         else:
             supported = set(getattr(module, "SUPPORTED_PROTOCOLS", set()))
-            if not {"DEV-SUITE-7.0", "DEV-SUITE-7.1", "DEV-SUITE-8.0"}.issubset(supported):
-                errors.append(f"{name}: validator must preserve DEV-SUITE-7.x and accept DEV-SUITE-8.0")
+            if not {"DEV-SUITE-7.0", "DEV-SUITE-7.1", "DEV-SUITE-8.0", "DEV-SUITE-8.1"}.issubset(supported):
+                errors.append(f"{name}: validator must preserve DEV-SUITE-7.x and accept DEV-SUITE-8.0/8.1")
 
     cases_path = ORCH_ROOT / "tests" / "end-to-end-cases.json"
     try:
@@ -586,7 +592,7 @@ def main() -> int:
         for error in errors:
             print(f"ERROR: {error}", file=sys.stderr)
         return 1
-    print(f"Dev Skill suite validation passed: {len(SPECIALISTS)} professional skills, 1 orchestrator agent, protocol DEV-SUITE-8.0")
+    print(f"Dev Skill suite validation passed: {len(SPECIALISTS)} professional skills, 1 orchestrator agent, protocol DEV-SUITE-8.1 (8.0 compatible)")
     return 0
 
 

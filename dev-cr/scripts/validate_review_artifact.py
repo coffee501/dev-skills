@@ -15,7 +15,7 @@ COMMON = {
     "protocol_version", "id", "type", "change", "version", "status", "owner",
     "sources", "applies_to", "risks", "evidence", "updated_at",
 }
-SUPPORTED_PROTOCOLS = {"DEV-SUITE-7.0", "DEV-SUITE-7.1", "DEV-SUITE-8.0"}
+SUPPORTED_PROTOCOLS = {"DEV-SUITE-7.0", "DEV-SUITE-7.1", "DEV-SUITE-8.0", "DEV-SUITE-8.1"}
 REQUIRED = {
     "review_scope", "base", "head", "imp_refs", "build_refs", "requirement_refs", "design_refs",
     "test_refs", "files_reviewed", "generated_or_external", "findings", "required_actions",
@@ -51,12 +51,12 @@ def validate_artifact(document: Any) -> list[str]:
         return ["artifact must be a JSON object"]
     errors: list[str] = []
     missing = sorted((COMMON | REQUIRED) - document.keys())
-    if document.get("protocol_version") == "DEV-SUITE-8.0":
+    if document.get("protocol_version") in {"DEV-SUITE-8.0", "DEV-SUITE-8.1"}:
         missing.extend(sorted(REQUIRED_8_0 - document.keys()))
     if missing:
         errors.append("missing required fields: " + ", ".join(sorted(set(missing))))
     if document.get("protocol_version") not in SUPPORTED_PROTOCOLS:
-        errors.append("protocol_version must be one of: DEV-SUITE-7.0, DEV-SUITE-7.1, DEV-SUITE-8.0")
+        errors.append("protocol_version must be one of: DEV-SUITE-7.0, DEV-SUITE-7.1, DEV-SUITE-8.0, DEV-SUITE-8.1")
     if document.get("type") != "code-review":
         errors.append("type must be code-review")
     if not isinstance(document.get("id"), str) or not re.fullmatch(r"REV-(?:PENDING-)?[A-Za-z0-9][A-Za-z0-9._-]*", document["id"]):
@@ -83,7 +83,7 @@ def validate_artifact(document: Any) -> list[str]:
     reviewer: dict[str, str] | None = None
     implementation_actors: list[dict[str, str]] = []
     independence: dict[str, Any] | None = None
-    if document.get("protocol_version") == "DEV-SUITE-8.0":
+    if document.get("protocol_version") in {"DEV-SUITE-8.0", "DEV-SUITE-8.1"}:
         reviewer = _validate_actor(document.get("reviewer"), "reviewer", errors)
         raw_actors = document.get("implementation_actors")
         if not isinstance(raw_actors, list):
@@ -116,7 +116,7 @@ def validate_artifact(document: Any) -> list[str]:
                 errors.append(f"Approved review requires non-empty {field}")
         if any(isinstance(item, dict) and item.get("blocking") for item in document.get("limitations", [])):
             errors.append("Approved review must not contain blocking limitations")
-        if document.get("protocol_version") == "DEV-SUITE-8.0":
+        if document.get("protocol_version") in {"DEV-SUITE-8.0", "DEV-SUITE-8.1"}:
             if not implementation_actors:
                 errors.append("Approved review requires at least one implementation actor")
             if independence is not None:
