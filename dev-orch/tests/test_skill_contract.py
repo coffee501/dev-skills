@@ -23,6 +23,36 @@ class DevOrchContractTests(unittest.TestCase):
         self.assertIn("./.claude/skills/dev-orch", plugin["skills"])
         self.assertIn("./.claude/agents/dev-orch.md", plugin["agents"])
 
+    def test_readme_has_one_orchestrator_entry_and_canonical_rule_links(self) -> None:
+        readme = (SUITE_ROOT / "README.md").read_text(encoding="utf-8")
+        self.assertIn("## 架构与规则入口", readme)
+        self.assertIn("`dev-orch` 统一入口", readme)
+        self.assertNotIn("## 三种使用方式", readme)
+        self.assertNotIn("Claude Code多阶段调度", readme)
+        self.assertNotIn("Codex多阶段治理与调度", readme)
+        for relative in (
+            "dev-orch/AGENT.md",
+            "dev-orch/references/capability-routing.md",
+            "dev-orch/references/orchestration-interface.md",
+            "dev-orch/references/lifecycle-state-model.md",
+            "dev-orch/references/handoff-contract.md",
+            "dev-orch/references/invalidation-rules.md",
+            "dev-orch/references/artifact-contract.md",
+            "dev-orch/references/platform-mapping.md",
+            "dev-orch/references/external-state-contract.md",
+            "dev-orch/references/orchestration-protocol.md",
+        ):
+            self.assertTrue((SUITE_ROOT / relative).is_file(), relative)
+            self.assertIn(f"]({relative})", readme)
+
+    def test_forward_evaluation_has_replayable_single_stage_trial(self) -> None:
+        evaluation = (ORCH_ROOT / "tests" / "forward-evaluation.md").read_text(encoding="utf-8")
+        for token in (
+            "REQ-TRIAL@v1", "AC-TRIAL@v1", "POST /orders", "direct → dev-test",
+            "不建立 `CHG/LCV/WIT`", "dev-orch/AGENT.md", "dev-test/SKILL.md",
+        ):
+            self.assertIn(token, evaluation)
+
     def test_claude_specialist_has_separate_artifact_write_capability(self) -> None:
         plugin = json.loads((SUITE_ROOT / ".claude-plugin" / "plugin.json").read_text(encoding="utf-8"))
         self.assertIn("./.claude/agents/dev-specialist.md", plugin["agents"])
